@@ -19,7 +19,6 @@ export type Database = {
           created_at: string
           data: string
           id: string
-          orcamento: number
           updated_at: string
           user_id: string
           valor_investido: number
@@ -28,7 +27,6 @@ export type Database = {
           created_at?: string
           data?: string
           id?: string
-          orcamento?: number
           updated_at?: string
           user_id: string
           valor_investido?: number
@@ -37,7 +35,6 @@ export type Database = {
           created_at?: string
           data?: string
           id?: string
-          orcamento?: number
           updated_at?: string
           user_id?: string
           valor_investido?: number

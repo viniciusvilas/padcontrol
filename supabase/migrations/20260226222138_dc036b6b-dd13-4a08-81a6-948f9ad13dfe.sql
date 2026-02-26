@@ -1,0 +1,1 @@
+ALTER TABLE public.anuncios DROP COLUMN orcamento;
