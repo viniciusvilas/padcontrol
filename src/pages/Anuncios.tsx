@@ -20,7 +20,7 @@ export default function Anuncios() {
   const qc = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Anuncio | null>(null);
-  const [formData, setFormData] = useState({ data: format(new Date(), "yyyy-MM-dd"), orcamento: "", valor_investido: "" });
+  const [formData, setFormData] = useState({ data: format(new Date(), "yyyy-MM-dd"), valor_investido: "" });
 
   const { data: anuncios = [], isLoading } = useQuery({
     queryKey: ["anuncios", user?.id],
@@ -55,7 +55,6 @@ export default function Anuncios() {
       const payload = {
         user_id: user!.id,
         data: formData.data,
-        orcamento: Number(formData.orcamento) || 0,
         valor_investido: Number(formData.valor_investido) || 0,
       };
       if (editing) {
@@ -88,13 +87,13 @@ export default function Anuncios() {
 
   const openNew = () => {
     setEditing(null);
-    setFormData({ data: format(new Date(), "yyyy-MM-dd"), orcamento: "", valor_investido: "" });
+    setFormData({ data: format(new Date(), "yyyy-MM-dd"), valor_investido: "" });
     setFormOpen(true);
   };
 
   const openEdit = (a: Anuncio) => {
     setEditing(a);
-    setFormData({ data: a.data, orcamento: String(a.orcamento), valor_investido: String(a.valor_investido) });
+    setFormData({ data: a.data, valor_investido: String(a.valor_investido) });
     setFormOpen(true);
   };
 
@@ -144,21 +143,19 @@ export default function Anuncios() {
           <TableHeader>
             <TableRow>
               <TableHead>Data</TableHead>
-              <TableHead>Orçamento</TableHead>
               <TableHead>Valor Investido</TableHead>
               <TableHead className="w-[80px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
             ) : anuncios.length === 0 ? (
-              <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Nenhum registro</TableCell></TableRow>
+              <TableRow><TableCell colSpan={3} className="text-center py-8 text-muted-foreground">Nenhum registro</TableCell></TableRow>
             ) : (
               anuncios.map((a) => (
                 <TableRow key={a.id}>
                   <TableCell>{a.data}</TableCell>
-                  <TableCell>R$ {Number(a.orcamento).toFixed(2)}</TableCell>
                   <TableCell>R$ {Number(a.valor_investido).toFixed(2)}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -179,7 +176,6 @@ export default function Anuncios() {
           <DialogHeader><DialogTitle>{editing ? "Editar Registro" : "Novo Registro de Anúncio"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Data</Label><Input type="date" value={formData.data} onChange={(e) => setFormData({ ...formData, data: e.target.value })} /></div>
-            <div><Label>Orçamento do Dia (R$)</Label><Input type="number" step="0.01" value={formData.orcamento} onChange={(e) => setFormData({ ...formData, orcamento: e.target.value })} /></div>
             <div><Label>Valor Investido (R$)</Label><Input type="number" step="0.01" value={formData.valor_investido} onChange={(e) => setFormData({ ...formData, valor_investido: e.target.value })} /></div>
           </div>
           <DialogFooter>
