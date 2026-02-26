@@ -1,48 +1,29 @@
 
 
-## Plano: Dashboard Financeiro
+## Plano: Corrigir dados e mostrar todas as informações na tabela
 
-### Dados Disponíveis
+### 1. Atualizar dados existentes no banco
 
-Todos os dados vêm da tabela `pedidos` do usuário logado. Cada pedido tem: `data`, `valor`, `plataforma` (Five/Keed), `pedido_pago`, `pedido_perdido`, `status`.
+Usar a ferramenta de insert/update para executar:
+- `UPDATE pedidos SET produto = '3+1' WHERE produto = 'T1'` (43 pedidos)
+- `UPDATE pedidos SET produto = '5+1' WHERE produto = 'T2'` (7 pedidos)
+- `UPDATE pedidos SET produto = '12' WHERE produto = 'T3'` (1 pedido)
+- `UPDATE pedidos SET plataforma = 'Keed' WHERE plataforma = 'Five'` (51 pedidos)
 
-Regras financeiras: frete Five = R$35 por pedido, Keed = R$0. Lucro líquido = valor bruto - frete.
+Depois o usuário altera manualmente os que são Five.
 
-### Componentes do Dashboard
+### 2. Expandir tabela em `src/pages/Pedidos.tsx`
 
-**1. Filtro de período** - Seletor com opções: Últimos 7 dias, 30 dias, 90 dias, Este mês, Tudo.
+Adicionar as colunas que faltam na tabela para que todas as informações fiquem visíveis:
+- **Plataforma** (Five/Keed)
+- **Telefone**
+- **Estado (UF)**
+- **Prazo**
+- **Previsão de Entrega**
+- **Rastreio**
 
-**2. Cards de resumo (topo)**
-- Faturamento Bruto total
-- Frete acumulado (Five)
-- Lucro Líquido
-- Total de Pedidos
-- Taxa de conversão (pagos / total)
+Atualizar o `colSpan` das linhas de loading/empty para refletir o novo total de colunas.
 
-**3. Gráfico de Barras - Faturamento por mês** (Recharts BarChart)
-- Agrupa pedidos por mês (formato MMM/yyyy)
-- Barras empilhadas: valor bruto vs frete
-- Eixo X = mês, Eixo Y = R$
-
-**4. Gráfico de Linha - Lucro líquido acumulado** (Recharts LineChart)
-- Linha mostrando a evolução do lucro líquido acumulado ao longo dos meses
-
-**5. Gráfico de Pizza - Distribuição por produto** (Recharts PieChart)
-- Fatias: 3+1, 5+1, 12
-- Mostra quantidade e percentual
-
-**6. Gráfico de Barras - Pedidos por status** (Recharts BarChart horizontal)
-- Criado, Aguardando, Em Cobrança, Pago, Perdido
-
-### Implementação
-
-1. **Reescrever `src/pages/Dashboard.tsx`** com:
-   - Query dos pedidos via TanStack Query (mesmo padrão da página Pedidos)
-   - Lógica de agrupamento por mês usando `date-fns`
-   - Filtro de período com estado local
-   - 4 gráficos usando `recharts` + componentes `ChartContainer`/`ChartTooltip` do shadcn/ui
-   - Cards de métricas no topo
-   - Layout responsivo em grid
-
-Nenhuma mudança no banco de dados é necessária.
+### Arquivos alterados
+- `src/pages/Pedidos.tsx` — adicionar colunas faltantes na tabela
 
