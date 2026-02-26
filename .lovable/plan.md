@@ -1,43 +1,36 @@
 
 
-## Plano: Anúncios, Dashboard reformulado e ações rápidas na tabela de Pedidos
+## Plano: Reescrever a tela de Projeção
 
-### 1. Tela de Anúncios (`src/pages/Anuncios.tsx`) — reescrever
-- CRUD de registros diários de anúncios (tabela `anuncios` já existe com `data`, `orcamento`, `valor_investido`)
-- Formulário para adicionar/editar gasto por dia
-- Tabela listando todos os registros com data, orçamento e valor investido
-- Resumo: total investido, CPA médio (total investido / total pedidos pagos)
+A página será reescrita do zero com duas seções principais:
 
-### 2. Dashboard reformulado (`src/pages/Dashboard.tsx`) — reescrever
-Buscar dados de `pedidos` e `anuncios`. Novas métricas:
+### Seção 1 — Projeção de Chegada de Pedidos + Cenários de Inadimplência
 
-**Cards:**
-- Lucro de pedidos pagos (soma valor dos pagos - frete Five dos pagos)
-- Valor total de pedidos agendados (todos)
-- Valor de pedidos agendados excluindo pagos
-- Qtd pedidos feitos
-- Qtd pedidos pagos
-- Qtd pedidos aguardando pagamento (!pago && !perdido)
-- Investimento total em anúncios
-- CPA médio (investimento / pedidos pagos)
-- CPA do dia (input de orçamento do dia / pedidos do dia) com campo editável
-- Taxa de inadimplência (pedidos com +7 dias aguardando / total elegível)
-- ROI investido vs pago (lucro pagos / investimento)
-- ROI investido vs agendado (valor agendado / investimento)
+- **Seletor de período**: Slider ou input numérico para escolher "próximos X dias" (7, 10, 14, 20, 30, etc.)
+- **Cálculo**: Usa a média diária de pedidos históricos (pedidos feitos / dias com dados) para projetar quantos pedidos chegarão no período escolhido
+- **Tabela de cenários de inadimplência**: Para o período selecionado, mostra uma tabela/grid com faixas de inadimplência de 0% a 50% (a cada 5% ou 10%), exibindo para cada faixa:
+  - Pedidos previstos que pagam
+  - Faturamento esperado (com base no ticket médio dos pagos)
+  - Lucro esperado (faturamento - frete Five dos pagos)
+- **Dados fonte**: busca todos os `pedidos` do usuário para calcular médias históricas
 
-**Gráficos:**
-- Barras: qtd pedidos feitos por dia/semana/mês (toggle)
-- Barras: qtd pagamentos por dia/semana/mês (toggle)
-- Pizza: pedidos agendados vs entregues vs pagos
-- Barras: pedidos por estado (UF)
+### Seção 2 — Projeção baseada em CPA (Simulador de Investimento)
 
-### 3. Tela de Pedidos (`src/pages/Pedidos.tsx`) — ajustar
-- Summary bar: trocar "Frete (Five)" por "Investimento em Anúncios" (buscar soma de `anuncios`)
-- Lucro líquido = soma valor dos pedidos pagos - frete Five dos pagos (não de todos)
-- Tornar os campos booleanos (Chegou, Chamado, Cobrado, Pago, Perdido) clicáveis diretamente na tabela com checkboxes/switches que fazem `UPDATE` inline sem abrir formulário de edição
+- **CPA editável**: Campo pré-preenchido com o CPA atual (investimento total / pedidos feitos), editável pelo usuário para simular cenários
+- **Seletor de período**: Escolher projetar por dias, semanas ou meses (ex: próximos 7 dias, 2 semanas, 1-3 meses)
+- **Investimento diário editável**: Campo para definir quanto pretende investir por dia
+- **Resultados calculados**:
+  - Pedidos esperados = (investimento diário × dias) / CPA
+  - Faturamento esperado = pedidos × ticket médio
+  - Lucro esperado = faturamento - frete - investimento total
+  - ROI projetado = lucro / investimento
+- Cards com os resultados e possivelmente um gráfico de barras simples mostrando a projeção
 
-### Arquivos alterados
-- `src/pages/Anuncios.tsx` — reescrever com CRUD completo
-- `src/pages/Dashboard.tsx` — reescrever com novas métricas e gráficos
-- `src/pages/Pedidos.tsx` — ajustar summary bar e adicionar toggle inline nos booleanos
+### Detalhes técnicos
+
+- **Arquivo**: `src/pages/Projecao.tsx` — reescrever completamente
+- **Queries**: Reutiliza as queries de `pedidos` e `anuncios` já existentes
+- **Sem mudanças no banco**: Não precisa de novas tabelas (a tabela `metas` continua existindo mas não será usada nesta tela)
+- **Componentes**: Cards, Slider, Input, Tabs do shadcn/ui já instalados
+- **Gráficos**: recharts para visualização dos cenários
 
