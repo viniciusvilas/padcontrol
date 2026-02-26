@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Package, Upload, Plus, Search, Filter } from "lucide-react";
+import { Package, Upload, Plus, Search, Filter, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImportPedidosDialog from "@/components/ImportPedidosDialog";
+import PedidoFormDialog from "@/components/PedidoFormDialog";
+import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Pedido = Tables<"pedidos">;
@@ -35,6 +37,8 @@ const statusStyle = (s: string) => {
 export default function Pedidos() {
   const { user } = useAuth();
   const [importOpen, setImportOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editPedido, setEditPedido] = useState<Pedido | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
 
@@ -70,6 +74,9 @@ export default function Pedidos() {
           <Badge variant="secondary" className="ml-1">{filtered.length}</Badge>
         </div>
         <div className="flex gap-2">
+          <Button onClick={() => { setEditPedido(null); setFormOpen(true); }}>
+            <Plus className="h-4 w-4 mr-1" /> Novo Pedido
+          </Button>
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Upload className="h-4 w-4 mr-1" /> Importar
           </Button>
@@ -128,13 +135,14 @@ export default function Pedidos() {
               <TableHead>Entrega</TableHead>
               <TableHead>Chegou</TableHead>
               <TableHead>Cobrado</TableHead>
+              <TableHead className="w-[80px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum pedido encontrado</TableCell></TableRow>
+              <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nenhum pedido encontrado</TableCell></TableRow>
             ) : (
               filtered.map((p) => (
                 <TableRow key={p.id}>
@@ -148,6 +156,20 @@ export default function Pedidos() {
                   <TableCell>{p.local_entrega || "—"}</TableCell>
                   <TableCell>{p.pedido_chegou ? "✅" : "—"}</TableCell>
                   <TableCell>{p.cliente_cobrado ? "✅" : "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditPedido(p); setFormOpen(true); }}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={async () => {
+                        const { error } = await supabase.from("pedidos").delete().eq("id", p.id);
+                        if (error) toast.error("Erro ao excluir");
+                        else { toast.success("Pedido excluído"); refetch(); }
+                      }}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -156,6 +178,7 @@ export default function Pedidos() {
       </div>
 
       <ImportPedidosDialog open={importOpen} onOpenChange={setImportOpen} onSuccess={refetch} />
+      <PedidoFormDialog open={formOpen} onOpenChange={setFormOpen} onSuccess={refetch} pedido={editPedido} />
     </div>
   );
 }
