@@ -28,6 +28,18 @@ const STATUS_OPTIONS = [
   { value: "perdido", label: "Perdido" },
 ];
 
+const PRODUTO_OPTIONS = [
+  { value: "3+1", label: "3+1", preco: 170 },
+  { value: "5+1", label: "5+1", preco: 220 },
+  { value: "12", label: "12", preco: 350 },
+];
+
+const ESTADOS_BR = [
+  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA",
+  "MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN",
+  "RS","RO","RR","SC","SP","SE","TO",
+];
+
 const defaultForm = {
   cliente: "",
   valor: "",
@@ -156,8 +168,21 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
 
           {/* Produto */}
           <div className="space-y-1.5">
-            <Label htmlFor="produto">Produto *</Label>
-            <Input id="produto" value={form.produto} onChange={(e) => set("produto", e.target.value)} placeholder="Ex: T1, T2, T3" />
+            <Label>Produto *</Label>
+            <Select value={form.produto} onValueChange={(v) => {
+              set("produto", v);
+              const found = PRODUTO_OPTIONS.find((p) => p.value === v);
+              if (found) set("valor", String(found.preco));
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o produto" />
+              </SelectTrigger>
+              <SelectContent>
+                {PRODUTO_OPTIONS.map((p) => (
+                  <SelectItem key={p.value} value={p.value}>{p.label} — R$ {p.preco}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Telefone */}
@@ -228,8 +253,18 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
 
           {/* Estado */}
           <div className="space-y-1.5">
-            <Label htmlFor="estado">Estado (UF)</Label>
-            <Input id="estado" value={form.estado} onChange={(e) => set("estado", e.target.value)} placeholder="SP" maxLength={2} />
+            <Label>Estado (UF)</Label>
+            <Select value={form.estado || "none"} onValueChange={(v) => set("estado", v === "none" ? "" : v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Não informado</SelectItem>
+                {ESTADOS_BR.map((uf) => (
+                  <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Observações */}
