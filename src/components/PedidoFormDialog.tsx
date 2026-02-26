@@ -40,15 +40,30 @@ const ESTADOS_BR = [
   "RS","RO","RR","SC","SP","SE","TO",
 ];
 
+const calcPrevisaoDefault = (data: string, prazo: string) => {
+  if (!data || !prazo) return "";
+  const date = new Date(data + "T12:00:00");
+  let dias = parseInt(prazo) || 0;
+  while (dias > 0) {
+    date.setDate(date.getDate() + 1);
+    const dow = date.getDay();
+    if (dow !== 0 && dow !== 6) dias--;
+  }
+  return date.toISOString().slice(0, 10);
+};
+
+const defaultData = new Date().toISOString().slice(0, 10);
+const defaultPrazo = "15";
+
 const defaultForm = {
   cliente: "",
   valor: "",
   produto: "",
   telefone: "",
   local_entrega: "",
-  prazo: "15",
-  data: new Date().toISOString().slice(0, 10),
-  previsao_entrega: "",
+  prazo: defaultPrazo,
+  data: defaultData,
+  previsao_entrega: calcPrevisaoDefault(defaultData, defaultPrazo),
   status: "criado",
   plataforma: "Five",
   rastreio: "",
@@ -94,7 +109,29 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
     }
   }, [pedido, open]);
 
-  const set = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
+  const calcPrevisao = (data: string, prazo: string) => {
+    if (!data || !prazo) return "";
+    const date = new Date(data + "T12:00:00");
+    let dias = parseInt(prazo) || 0;
+    while (dias > 0) {
+      date.setDate(date.getDate() + 1);
+      const dow = date.getDay();
+      if (dow !== 0 && dow !== 6) dias--;
+    }
+    return date.toISOString().slice(0, 10);
+  };
+
+  const set = (key: string, value: any) => {
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "data" || key === "prazo") {
+        const d = key === "data" ? value : prev.data;
+        const p = key === "prazo" ? value : prev.prazo;
+        next.previsao_entrega = calcPrevisao(d, p);
+      }
+      return next;
+    });
+  };
 
   const handleSubmit = async () => {
     if (!user) return toast.error("Você precisa estar logado.");
@@ -205,8 +242,8 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
 
           {/* Previsão de entrega */}
           <div className="space-y-1.5">
-            <Label htmlFor="previsao_entrega">Previsão de Entrega</Label>
-            <Input id="previsao_entrega" type="date" value={form.previsao_entrega} onChange={(e) => set("previsao_entrega", e.target.value)} />
+            <Label htmlFor="previsao_entrega">Previsão de Entrega (auto)</Label>
+            <Input id="previsao_entrega" type="date" value={form.previsao_entrega} readOnly className="bg-muted" />
           </div>
 
           {/* Local de entrega */}
