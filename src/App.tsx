@@ -8,6 +8,7 @@ import { AppLayout } from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import Pedidos from "./pages/Pedidos";
 import PrestesAChegar from "./pages/PrestesAChegar";
+import FaltaChamar from "./pages/FaltaChamar";
 import Cobranca from "./pages/Cobranca";
 import Prioridade from "./pages/Prioridade";
 import Pagos from "./pages/Pagos";
@@ -57,6 +58,7 @@ const App = () => (
             <Route element={<ProtectedRoutes />}>
               <Route path="/" element={<Pedidos />} />
               <Route path="/prestes-a-chegar" element={<PrestesAChegar />} />
+              <Route path="/falta-chamar" element={<FaltaChamar />} />
               <Route path="/cobranca" element={<Cobranca />} />
               <Route path="/prioridade" element={<Prioridade />} />
               <Route path="/pagos" element={<Pagos />} />
