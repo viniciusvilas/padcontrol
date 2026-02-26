@@ -1,38 +1,41 @@
 import { useState, useMemo } from "react";
-import { TrendingUp, Target, Megaphone, DollarSign, Package, Save, Pencil } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { TrendingUp, Calculator, DollarSign, Package, Percent, Megaphone } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, startOfMonth, endOfMonth, parseISO, getDaysInMonth, differenceInCalendarDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { differenceInCalendarDays, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { toast } from "sonner";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
 import {
   ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig,
 } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 
 const FRETE_FIVE = 35;
 
-const projectionChartConfig: ChartConfig = {
-  real: { label: "Real", color: "hsl(var(--primary))" },
-  projetado: { label: "Projetado", color: "hsl(var(--muted-foreground))" },
+const roiChartConfig: ChartConfig = {
+  faturamento: { label: "Faturamento", color: "hsl(var(--primary))" },
+  lucro: { label: "Lucro", color: "hsl(var(--chart-2))" },
+  investimento: { label: "Investimento", color: "hsl(var(--destructive))" },
 };
 
 export default function Projecao() {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const now = new Date();
-  const mesAtual = format(startOfMonth(now), "yyyy-MM-dd");
-  const [editingMeta, setEditingMeta] = useState(false);
-  const [metaFat, setMetaFat] = useState("");
-  const [metaPed, setMetaPed] = useState("");
 
-  // Fetch pedidos
+  // --- State ---
+  const [dias, setDias] = useState(30);
+  const [cpaCustom, setCpaCustom] = useState("");
+  const [investDiario, setInvestDiario] = useState("");
+  const [simPeriodoTipo, setSimPeriodoTipo] = useState<"dias" | "semanas" | "meses">("dias");
+  const [simPeriodoQtd, setSimPeriodoQtd] = useState("30");
+
+  // --- Queries ---
   const { data: pedidos = [] } = useQuery({
     queryKey: ["pedidos-projecao", user?.id],
     queryFn: async () => {
@@ -43,7 +46,6 @@ export default function Projecao() {
     enabled: !!user,
   });
 
-  // Fetch anuncios
   const { data: anuncios = [] } = useQuery({
     queryKey: ["anuncios-projecao", user?.id],
     queryFn: async () => {
@@ -54,305 +56,299 @@ export default function Projecao() {
     enabled: !!user,
   });
 
-  // Fetch meta do mês
-  const { data: meta } = useQuery({
-    queryKey: ["meta-mes", user?.id, mesAtual],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("metas")
-        .select("*")
-        .eq("user_id", user!.id)
-        .eq("mes", mesAtual)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
+  // --- Métricas históricas ---
+  const historico = useMemo(() => {
+    if (pedidos.length === 0) return null;
 
-  // Save meta
-  const saveMeta = useMutation({
-    mutationFn: async () => {
-      const payload = {
-        user_id: user!.id,
-        mes: mesAtual,
-        meta_faturamento: Number(metaFat) || 0,
-        meta_pedidos: Number(metaPed) || 0,
-      };
-      if (meta?.id) {
-        const { error } = await supabase.from("metas").update(payload).eq("id", meta.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("metas").insert(payload);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["meta-mes"] });
-      setEditingMeta(false);
-      toast.success("Meta salva!");
-    },
-    onError: () => toast.error("Erro ao salvar meta"),
-  });
+    const datas = pedidos.map((p) => parseISO(p.data));
+    const min = new Date(Math.min(...datas.map((d) => d.getTime())));
+    const max = new Date(Math.max(...datas.map((d) => d.getTime())));
+    const diasHistorico = Math.max(differenceInCalendarDays(max, min) + 1, 1);
 
-  // Initialize form when meta loads
-  useMemo(() => {
-    if (meta && !editingMeta) {
-      setMetaFat(String(meta.meta_faturamento || ""));
-      setMetaPed(String(meta.meta_pedidos || ""));
-    }
-  }, [meta]);
+    const mediaPedidosDia = pedidos.length / diasHistorico;
 
-  // Pedidos do mês atual
-  const inicioMes = startOfMonth(now);
-  const fimMes = endOfMonth(now);
-  const pedidosMes = useMemo(() =>
-    pedidos.filter((p) => {
-      const d = parseISO(p.data);
-      return d >= inicioMes && d <= fimMes;
-    }),
-    [pedidos, mesAtual]
-  );
+    const pagos = pedidos.filter((p) => p.pedido_pago);
+    const ticketMedioPagos = pagos.length > 0
+      ? pagos.reduce((s, p) => s + Number(p.valor), 0) / pagos.length
+      : 0;
 
-  const anunciosMes = useMemo(() =>
-    anuncios.filter((a) => {
-      const d = parseISO(a.data);
-      return d >= inicioMes && d <= fimMes;
-    }),
-    [anuncios, mesAtual]
-  );
+    const freteMedioPagos = pagos.length > 0
+      ? pagos.reduce((s, p) => s + (p.plataforma === "Five" ? FRETE_FIVE : 0), 0) / pagos.length
+      : 0;
 
-  // Métricas atuais do mês
-  const totalPedidosMes = pedidosMes.length;
-  const pagosMes = pedidosMes.filter((p) => p.pedido_pago);
-  const faturamentoPagosMes = pagosMes.reduce((s, p) => s + Number(p.valor), 0);
-  const lucroPagosMes = pagosMes.reduce((s, p) => s + Number(p.valor) - (p.plataforma === "Five" ? FRETE_FIVE : 0), 0);
-  const valorAgendadoMes = pedidosMes.reduce((s, p) => s + Number(p.valor), 0);
-  const investidoMes = anunciosMes.reduce((s, a) => s + Number(a.valor_investido), 0);
+    const totalInvestido = anuncios.reduce((s, a) => s + Number(a.valor_investido), 0);
+    const cpaAtual = pedidos.length > 0 ? totalInvestido / pedidos.length : 0;
 
-  // Projeções
-  const diasNoMes = getDaysInMonth(now);
-  const diaAtual = now.getDate();
-  const diasRestantes = diasNoMes - diaAtual;
+    const taxaInadimplenciaReal = pedidos.length > 0
+      ? 1 - (pagos.length / pedidos.length)
+      : 0;
 
-  // Média diária
-  const mediaPedidosDia = diaAtual > 0 ? totalPedidosMes / diaAtual : 0;
-  const mediaFatDia = diaAtual > 0 ? valorAgendadoMes / diaAtual : 0;
-  const mediaInvestDia = diaAtual > 0 ? investidoMes / diaAtual : 0;
+    return {
+      mediaPedidosDia,
+      ticketMedioPagos,
+      freteMedioPagos,
+      cpaAtual,
+      totalInvestido,
+      taxaInadimplenciaReal,
+      diasHistorico,
+    };
+  }, [pedidos, anuncios]);
 
-  // Projeções para o fim do mês
-  const pedidosProjetados = Math.round(totalPedidosMes + mediaPedidosDia * diasRestantes);
-  const fatProjetado = valorAgendadoMes + mediaFatDia * diasRestantes;
-  const investProjetado = investidoMes + mediaInvestDia * diasRestantes;
+  // --- Seção 1: Cenários de inadimplência ---
+  const cenarios = useMemo(() => {
+    if (!historico) return [];
+    const pedidosPrevistos = Math.round(historico.mediaPedidosDia * dias);
+    const faixas = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
 
-  // Taxa de conversão histórica (pagos / total)
-  const taxaConversao = pedidos.length > 0
-    ? pedidos.filter((p) => p.pedido_pago).length / pedidos.length
-    : 0;
-  const pagosProjetados = Math.round(pedidosProjetados * taxaConversao);
-  const lucroProjetado = pagosProjetados * (pagosMes.length > 0 ? lucroPagosMes / pagosMes.length : 0);
-
-  // CPA projetado
-  const cpaProjetado = pedidosProjetados > 0 ? investProjetado / pedidosProjetados : 0;
-
-  // Meta progress
-  const metaFaturamento = meta?.meta_faturamento || 0;
-  const metaPedidosVal = meta?.meta_pedidos || 0;
-  const progressFat = metaFaturamento > 0 ? Math.min((valorAgendadoMes / metaFaturamento) * 100, 100) : 0;
-  const progressPed = metaPedidosVal > 0 ? Math.min((totalPedidosMes / metaPedidosVal) * 100, 100) : 0;
-
-  // Para atingir meta: quanto investir
-  const cpaMedioHistorico = pedidos.length > 0
-    ? anuncios.reduce((s, a) => s + Number(a.valor_investido), 0) / pedidos.length
-    : 0;
-  const pedidosFaltamMeta = Math.max(0, metaPedidosVal - totalPedidosMes);
-  const investNecessario = pedidosFaltamMeta * cpaMedioHistorico;
-
-  // Chart data: faturamento diário acumulado vs meta
-  const chartData = useMemo(() => {
-    const dailyMap = new Map<number, number>();
-    pedidosMes.forEach((p) => {
-      const dia = parseISO(p.data).getDate();
-      dailyMap.set(dia, (dailyMap.get(dia) || 0) + Number(p.valor));
+    return faixas.map((inadPct) => {
+      const pagam = Math.round(pedidosPrevistos * (1 - inadPct / 100));
+      const fat = pagam * historico.ticketMedioPagos;
+      const lucro = pagam * (historico.ticketMedioPagos - historico.freteMedioPagos);
+      return { inadPct, pedidosPrevistos, pagam, fat, lucro };
     });
+  }, [historico, dias]);
 
-    let acumulado = 0;
-    return Array.from({ length: diasNoMes }, (_, i) => {
-      const dia = i + 1;
-      const isReal = dia <= diaAtual;
-      acumulado += dailyMap.get(dia) || 0;
-      const projetadoAcum = isReal ? null : acumulado + mediaFatDia * (dia - diaAtual);
-      return {
-        dia: String(dia),
-        real: isReal ? acumulado : null,
-        projetado: isReal ? null : projetadoAcum,
-      };
-    });
-  }, [pedidosMes, diasNoMes, diaAtual, mediaFatDia]);
+  // --- Seção 2: Simulador CPA ---
+  const simDias = useMemo(() => {
+    const qtd = Number(simPeriodoQtd) || 0;
+    if (simPeriodoTipo === "semanas") return qtd * 7;
+    if (simPeriodoTipo === "meses") return qtd * 30;
+    return qtd;
+  }, [simPeriodoTipo, simPeriodoQtd]);
+
+  const simulacao = useMemo(() => {
+    if (!historico || simDias <= 0) return null;
+    const cpa = Number(cpaCustom) || historico.cpaAtual;
+    const invDia = Number(investDiario) || 0;
+    if (cpa <= 0 || invDia <= 0) return null;
+
+    const investTotal = invDia * simDias;
+    const pedidosEsperados = Math.round(investTotal / cpa);
+    const fatEsperado = pedidosEsperados * historico.ticketMedioPagos;
+    const lucroEsperado = pedidosEsperados * (historico.ticketMedioPagos - historico.freteMedioPagos) - investTotal;
+    const roi = investTotal > 0 ? (lucroEsperado / investTotal) * 100 : 0;
+
+    return { investTotal, pedidosEsperados, fatEsperado, lucroEsperado, roi, cpa };
+  }, [historico, cpaCustom, investDiario, simDias]);
+
+  const simChartData = useMemo(() => {
+    if (!simulacao) return [];
+    return [
+      { nome: "Investimento", valor: simulacao.investTotal },
+      { nome: "Faturamento", valor: simulacao.fatEsperado },
+      { nome: "Lucro", valor: Math.max(simulacao.lucroEsperado, 0) },
+    ];
+  }, [simulacao]);
+
+  const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <TrendingUp className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold">Projeção — {format(now, "MMMM yyyy", { locale: ptBR })}</h1>
+        <h1 className="text-2xl font-bold">Projeção</h1>
       </div>
 
-      {/* Meta Mensal */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Target className="h-4 w-4" /> Meta Mensal
-          </CardTitle>
-          {!editingMeta ? (
-            <Button variant="ghost" size="sm" onClick={() => setEditingMeta(true)}>
-              <Pencil className="h-4 w-4 mr-1" /> Editar
-            </Button>
-          ) : (
-            <Button size="sm" onClick={() => saveMeta.mutate()} disabled={saveMeta.isPending}>
-              <Save className="h-4 w-4 mr-1" /> Salvar
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {editingMeta ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <Label className="text-xs">Meta de Faturamento (R$)</Label>
-                <Input type="number" value={metaFat} onChange={(e) => setMetaFat(e.target.value)} placeholder="0.00" />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Meta de Pedidos</Label>
-                <Input type="number" value={metaPed} onChange={(e) => setMetaPed(e.target.value)} placeholder="0" />
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Faturamento</span>
-                  <span className="font-medium">
-                    R$ {valorAgendadoMes.toFixed(2)} / R$ {metaFaturamento.toFixed(2)}
-                  </span>
+      {pedidos.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center text-muted-foreground">
+            Nenhum pedido encontrado. Adicione pedidos para ver projeções.
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs defaultValue="inadimplencia" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="inadimplencia">
+              <Percent className="h-4 w-4 mr-2" /> Chegada & Inadimplência
+            </TabsTrigger>
+            <TabsTrigger value="cpa">
+              <Megaphone className="h-4 w-4 mr-2" /> Simulador de Investimento
+            </TabsTrigger>
+          </TabsList>
+
+          {/* === SEÇÃO 1 === */}
+          <TabsContent value="inadimplencia" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Período de projeção</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <Slider
+                    value={[dias]}
+                    onValueChange={([v]) => setDias(v)}
+                    min={1}
+                    max={90}
+                    step={1}
+                    className="flex-1"
+                  />
+                  <div className="flex items-center gap-2 min-w-[120px]">
+                    <Input
+                      type="number"
+                      value={dias}
+                      onChange={(e) => setDias(Math.max(1, Math.min(90, Number(e.target.value) || 1)))}
+                      className="w-20 text-center"
+                    />
+                    <span className="text-sm text-muted-foreground">dias</span>
+                  </div>
                 </div>
-                <Progress value={progressFat} className="h-3" />
-                <p className="text-xs text-muted-foreground">
-                  {progressFat.toFixed(0)}% atingido • Projeção: R$ {fatProjetado.toFixed(2)}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Pedidos</span>
-                  <span className="font-medium">
-                    {totalPedidosMes} / {metaPedidosVal}
-                  </span>
+
+                {historico && (
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    <span>Média: <strong className="text-foreground">{historico.mediaPedidosDia.toFixed(1)}</strong> pedidos/dia</span>
+                    <span>Ticket médio: <strong className="text-foreground">{fmt(historico.ticketMedioPagos)}</strong></span>
+                    <span>Inadimplência real: <strong className="text-foreground">{(historico.taxaInadimplenciaReal * 100).toFixed(0)}%</strong></span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {cenarios.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    Cenários para os próximos {dias} dias ({cenarios[0]?.pedidosPrevistos} pedidos previstos)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Inadimplência</TableHead>
+                        <TableHead className="text-right">Pagam</TableHead>
+                        <TableHead className="text-right">Faturamento</TableHead>
+                        <TableHead className="text-right">Lucro</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {cenarios.map((c) => {
+                        const isReal = historico && Math.abs(c.inadPct - historico.taxaInadimplenciaReal * 100) < 5;
+                        return (
+                          <TableRow key={c.inadPct} className={isReal ? "bg-primary/5 font-medium" : ""}>
+                            <TableCell>
+                              {c.inadPct}%
+                              {isReal && <span className="ml-2 text-xs text-primary">(≈ atual)</span>}
+                            </TableCell>
+                            <TableCell className="text-right">{c.pagam}</TableCell>
+                            <TableCell className="text-right">{fmt(c.fat)}</TableCell>
+                            <TableCell className="text-right">{fmt(c.lucro)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* === SEÇÃO 2 === */}
+          <TabsContent value="cpa" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Configuração do Simulador</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">CPA (R$)</Label>
+                    <Input
+                      type="number"
+                      placeholder={historico ? historico.cpaAtual.toFixed(2) : "0.00"}
+                      value={cpaCustom}
+                      onChange={(e) => setCpaCustom(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Atual: {historico ? fmt(historico.cpaAtual) : "—"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Investimento diário (R$)</Label>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      value={investDiario}
+                      onChange={(e) => setInvestDiario(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Quantidade</Label>
+                    <Input
+                      type="number"
+                      value={simPeriodoQtd}
+                      onChange={(e) => setSimPeriodoQtd(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Unidade</Label>
+                    <div className="flex gap-1">
+                      {(["dias", "semanas", "meses"] as const).map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => setSimPeriodoTipo(t)}
+                          className={`flex-1 px-2 py-2 rounded-md text-xs font-medium transition-colors ${
+                            simPeriodoTipo === t
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground hover:bg-accent"
+                          }`}
+                        >
+                          {t.charAt(0).toUpperCase() + t.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <Progress value={progressPed} className="h-3" />
-                <p className="text-xs text-muted-foreground">
-                  {progressPed.toFixed(0)}% atingido • Projeção: {pedidosProjetados} pedidos
-                </p>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
 
-      {/* Projeções */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        <ProjectionCard
-          title="Pedidos Projetados"
-          icon={Package}
-          current={totalPedidosMes}
-          projected={pedidosProjetados}
-          format="int"
-        />
-        <ProjectionCard
-          title="Faturamento Projetado"
-          icon={DollarSign}
-          current={valorAgendadoMes}
-          projected={fatProjetado}
-          format="currency"
-        />
-        <ProjectionCard
-          title="Pagos Projetados"
-          icon={TrendingUp}
-          current={pagosMes.length}
-          projected={pagosProjetados}
-          format="int"
-          subtitle={`Taxa conv.: ${(taxaConversao * 100).toFixed(0)}%`}
-        />
-        <ProjectionCard
-          title="Lucro Projetado"
-          icon={DollarSign}
-          current={lucroPagosMes}
-          projected={lucroProjetado}
-          format="currency"
-        />
-      </div>
+            {simulacao ? (
+              <>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <SimCard icon={Package} title="Pedidos Esperados" value={String(simulacao.pedidosEsperados)} />
+                  <SimCard icon={DollarSign} title="Faturamento" value={fmt(simulacao.fatEsperado)} />
+                  <SimCard icon={Calculator} title="Lucro Esperado" value={fmt(simulacao.lucroEsperado)} color={simulacao.lucroEsperado >= 0 ? "text-chart-2" : "text-destructive"} />
+                  <SimCard icon={TrendingUp} title="ROI" value={`${simulacao.roi.toFixed(0)}%`} color={simulacao.roi >= 0 ? "text-chart-2" : "text-destructive"} />
+                </div>
 
-      {/* Anúncios Projeção */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <ProjectionCard
-          title="Investimento Projetado"
-          icon={Megaphone}
-          current={investidoMes}
-          projected={investProjetado}
-          format="currency"
-        />
-        <ProjectionCard
-          title="CPA Projetado"
-          icon={Target}
-          current={totalPedidosMes > 0 ? investidoMes / totalPedidosMes : 0}
-          projected={cpaProjetado}
-          format="currency"
-        />
-        {metaPedidosVal > 0 && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium">Investimento p/ Meta</CardTitle>
-              <Megaphone className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">R$ {investNecessario.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">
-                {pedidosFaltamMeta} pedidos faltam • CPA médio: R$ {cpaMedioHistorico.toFixed(2)}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Gráfico acumulado */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Faturamento Acumulado vs Projeção</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={projectionChartConfig} className="h-[300px] w-full">
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="dia" className="text-xs" />
-              <YAxis className="text-xs" />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="real" fill="var(--color-real)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="projetado" fill="var(--color-projetado)" radius={[4, 4, 0, 0]} opacity={0.4} />
-              {metaFaturamento > 0 && (
-                <ReferenceLine y={metaFaturamento} stroke="hsl(var(--destructive))" strokeDasharray="5 5" label={{ value: "Meta", position: "right", fill: "hsl(var(--destructive))" }} />
-              )}
-            </BarChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Comparativo — {simDias} dias</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={roiChartConfig} className="h-[250px] w-full">
+                      <BarChart data={simChartData}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                        <XAxis dataKey="nome" className="text-xs" />
+                        <YAxis className="text-xs" />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar
+                          dataKey="valor"
+                          radius={[4, 4, 0, 0]}
+                          fill="hsl(var(--primary))"
+                        />
+                      </BarChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card>
+                <CardContent className="py-10 text-center text-muted-foreground">
+                  Preencha o CPA e o investimento diário para ver a simulação.
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }
 
-function ProjectionCard({
-  title, icon: Icon, current, projected, format: fmt, subtitle,
-}: {
-  title: string; icon: any; current: number; projected: number; format: "currency" | "int"; subtitle?: string;
-}) {
-  const formatVal = (v: number) => fmt === "currency" ? `R$ ${v.toFixed(2)}` : String(Math.round(v));
+function SimCard({ icon: Icon, title, value, color }: { icon: any; title: string; value: string; color?: string }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
@@ -360,9 +356,7 @@ function ProjectionCard({
         <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{formatVal(projected)}</div>
-        <p className="text-xs text-muted-foreground">Atual: {formatVal(current)}</p>
-        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+        <div className={`text-2xl font-bold ${color || ""}`}>{value}</div>
       </CardContent>
     </Card>
   );
