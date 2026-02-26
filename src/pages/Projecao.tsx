@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
-import { TrendingUp, Calculator, DollarSign, Package, Percent, Megaphone } from "lucide-react";
+import { TrendingUp, Calculator, DollarSign, Package, Percent, Megaphone, CalendarDays } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { differenceInCalendarDays, parseISO } from "date-fns";
+import { addDays, format, parseISO, startOfDay, differenceInCalendarDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,10 @@ const roiChartConfig: ChartConfig = {
   investimento: { label: "Investimento", color: "hsl(var(--destructive))" },
 };
 
+const fluxoChartConfig: ChartConfig = {
+  pagamentos: { label: "Pagamentos", color: "hsl(var(--primary))" },
+};
+
 export default function Projecao() {
   const { user } = useAuth();
 
@@ -34,6 +38,7 @@ export default function Projecao() {
   const [investDiario, setInvestDiario] = useState("");
   const [simPeriodoTipo, setSimPeriodoTipo] = useState<"dias" | "semanas" | "meses">("dias");
   const [simPeriodoQtd, setSimPeriodoQtd] = useState("30");
+  const [inadimplenciaSim, setInadimplenciaSim] = useState(20);
 
   // --- Queries ---
   const { data: pedidos = [] } = useQuery({
@@ -56,7 +61,7 @@ export default function Projecao() {
     enabled: !!user,
   });
 
-  // --- Métricas históricas ---
+  // --- Métricas históricas (para simulador) ---
   const historico = useMemo(() => {
     if (pedidos.length === 0) return null;
 
@@ -79,34 +84,43 @@ export default function Projecao() {
     const totalInvestido = anuncios.reduce((s, a) => s + Number(a.valor_investido), 0);
     const cpaAtual = pedidos.length > 0 ? totalInvestido / pedidos.length : 0;
 
-    const taxaInadimplenciaReal = pedidos.length > 0
-      ? 1 - (pagos.length / pedidos.length)
-      : 0;
-
     return {
       mediaPedidosDia,
       ticketMedioPagos,
       freteMedioPagos,
       cpaAtual,
       totalInvestido,
-      taxaInadimplenciaReal,
       diasHistorico,
     };
   }, [pedidos, anuncios]);
 
-  // --- Seção 1: Cenários de inadimplência ---
+  // --- Seção 1: Pedidos reais com previsão de entrega no período ---
+  const hoje = startOfDay(new Date());
+
+  const pedidosFiltrados = useMemo(() => {
+    const limite = addDays(hoje, dias);
+    return pedidos.filter((p) => {
+      if (!p.previsao_entrega) return false;
+      if (p.pedido_pago || p.pedido_perdido) return false;
+      const prev = parseISO(p.previsao_entrega);
+      return prev >= hoje && prev <= limite;
+    });
+  }, [pedidos, dias, hoje]);
+
   const cenarios = useMemo(() => {
-    if (!historico) return [];
-    const pedidosPrevistos = Math.round(historico.mediaPedidosDia * dias);
+    if (pedidosFiltrados.length === 0) return [];
+    const totalValor = pedidosFiltrados.reduce((s, p) => s + Number(p.valor), 0);
+    const totalFrete = pedidosFiltrados.reduce((s, p) => s + (p.plataforma === "Five" ? FRETE_FIVE : 0), 0);
     const faixas = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
 
     return faixas.map((inadPct) => {
-      const pagam = Math.round(pedidosPrevistos * (1 - inadPct / 100));
-      const fat = pagam * historico.ticketMedioPagos;
-      const lucro = pagam * (historico.ticketMedioPagos - historico.freteMedioPagos);
-      return { inadPct, pedidosPrevistos, pagam, fat, lucro };
+      const pagam = Math.round(pedidosFiltrados.length * (1 - inadPct / 100));
+      const proporcao = pedidosFiltrados.length > 0 ? pagam / pedidosFiltrados.length : 0;
+      const fat = totalValor * proporcao;
+      const lucro = (totalValor - totalFrete) * proporcao;
+      return { inadPct, total: pedidosFiltrados.length, pagam, fat, lucro };
     });
-  }, [historico, dias]);
+  }, [pedidosFiltrados]);
 
   // --- Seção 2: Simulador CPA ---
   const simDias = useMemo(() => {
@@ -124,12 +138,13 @@ export default function Projecao() {
 
     const investTotal = invDia * simDias;
     const pedidosEsperados = Math.round(investTotal / cpa);
-    const fatEsperado = pedidosEsperados * historico.ticketMedioPagos;
-    const lucroEsperado = pedidosEsperados * (historico.ticketMedioPagos - historico.freteMedioPagos) - investTotal;
+    const pedidosPagos = Math.round(pedidosEsperados * (1 - inadimplenciaSim / 100));
+    const fatEsperado = pedidosPagos * historico.ticketMedioPagos;
+    const lucroEsperado = pedidosPagos * (historico.ticketMedioPagos - historico.freteMedioPagos) - investTotal;
     const roi = investTotal > 0 ? (lucroEsperado / investTotal) * 100 : 0;
 
-    return { investTotal, pedidosEsperados, fatEsperado, lucroEsperado, roi, cpa };
-  }, [historico, cpaCustom, investDiario, simDias]);
+    return { investTotal, pedidosEsperados, pedidosPagos, fatEsperado, lucroEsperado, roi, cpa };
+  }, [historico, cpaCustom, investDiario, simDias, inadimplenciaSim]);
 
   const simChartData = useMemo(() => {
     if (!simulacao) return [];
@@ -139,6 +154,29 @@ export default function Projecao() {
       { nome: "Lucro", valor: Math.max(simulacao.lucroEsperado, 0) },
     ];
   }, [simulacao]);
+
+  // --- Fluxo de caixa diário (12 dias para receber) ---
+  const fluxoCaixaData = useMemo(() => {
+    if (!simulacao || simDias <= 0) return [];
+    const pedidosPorDia = simulacao.pedidosPagos / simDias;
+    const totalDias = simDias + 12;
+    const map: Record<string, number> = {};
+
+    for (let d = 0; d < simDias; d++) {
+      const diaPagamento = d + 12;
+      const diaLabel = format(addDays(hoje, diaPagamento), "dd/MM");
+      map[diaLabel] = (map[diaLabel] || 0) + pedidosPorDia;
+    }
+
+    const result: { dia: string; pagamentos: number }[] = [];
+    for (let d = 12; d < totalDias; d++) {
+      const label = format(addDays(hoje, d), "dd/MM");
+      if (map[label]) {
+        result.push({ dia: label, pagamentos: Math.round(map[label] * 100) / 100 });
+      }
+    }
+    return result;
+  }, [simulacao, simDias, hoje]);
 
   const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -166,7 +204,7 @@ export default function Projecao() {
             </TabsTrigger>
           </TabsList>
 
-          {/* === SEÇÃO 1 === */}
+          {/* === SEÇÃO 1 — Pedidos reais === */}
           <TabsContent value="inadimplencia" className="space-y-4">
             <Card>
               <CardHeader>
@@ -193,21 +231,19 @@ export default function Projecao() {
                   </div>
                 </div>
 
-                {historico && (
-                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                    <span>Média: <strong className="text-foreground">{historico.mediaPedidosDia.toFixed(1)}</strong> pedidos/dia</span>
-                    <span>Ticket médio: <strong className="text-foreground">{fmt(historico.ticketMedioPagos)}</strong></span>
-                    <span>Inadimplência real: <strong className="text-foreground">{(historico.taxaInadimplenciaReal * 100).toFixed(0)}%</strong></span>
-                  </div>
-                )}
+                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <span>Pedidos no período: <strong className="text-foreground">{pedidosFiltrados.length}</strong></span>
+                  <span>Valor total: <strong className="text-foreground">{fmt(pedidosFiltrados.reduce((s, p) => s + Number(p.valor), 0))}</strong></span>
+                  <span>Pagamento estimado: <strong className="text-foreground">entrega + 3 dias</strong></span>
+                </div>
               </CardContent>
             </Card>
 
-            {cenarios.length > 0 && (
+            {cenarios.length > 0 ? (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">
-                    Cenários para os próximos {dias} dias ({cenarios[0]?.pedidosPrevistos} pedidos previstos)
+                    Cenários — {pedidosFiltrados.length} pedidos com entrega nos próximos {dias} dias
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -221,34 +257,34 @@ export default function Projecao() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {cenarios.map((c) => {
-                        const isReal = historico && Math.abs(c.inadPct - historico.taxaInadimplenciaReal * 100) < 5;
-                        return (
-                          <TableRow key={c.inadPct} className={isReal ? "bg-primary/5 font-medium" : ""}>
-                            <TableCell>
-                              {c.inadPct}%
-                              {isReal && <span className="ml-2 text-xs text-primary">(≈ atual)</span>}
-                            </TableCell>
-                            <TableCell className="text-right">{c.pagam}</TableCell>
-                            <TableCell className="text-right">{fmt(c.fat)}</TableCell>
-                            <TableCell className="text-right">{fmt(c.lucro)}</TableCell>
-                          </TableRow>
-                        );
-                      })}
+                      {cenarios.map((c) => (
+                        <TableRow key={c.inadPct}>
+                          <TableCell>{c.inadPct}%</TableCell>
+                          <TableCell className="text-right">{c.pagam}</TableCell>
+                          <TableCell className="text-right">{fmt(c.fat)}</TableCell>
+                          <TableCell className="text-right">{fmt(c.lucro)}</TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-10 text-center text-muted-foreground">
+                  Nenhum pedido com previsão de entrega nos próximos {dias} dias (excluindo pagos e perdidos).
                 </CardContent>
               </Card>
             )}
           </TabsContent>
 
-          {/* === SEÇÃO 2 === */}
+          {/* === SEÇÃO 2 — Simulador === */}
           <TabsContent value="cpa" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Configuração do Simulador</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-xs">CPA (R$)</Label>
@@ -301,13 +337,29 @@ export default function Projecao() {
                     </div>
                   </div>
                 </div>
+
+                {/* Slider de inadimplência */}
+                <div className="space-y-2 pt-2 border-t">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Inadimplência esperada</Label>
+                    <span className="text-sm font-semibold">{inadimplenciaSim}%</span>
+                  </div>
+                  <Slider
+                    value={[inadimplenciaSim]}
+                    onValueChange={([v]) => setInadimplenciaSim(v)}
+                    min={0}
+                    max={50}
+                    step={1}
+                  />
+                </div>
               </CardContent>
             </Card>
 
             {simulacao ? (
               <>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                   <SimCard icon={Package} title="Pedidos Esperados" value={String(simulacao.pedidosEsperados)} />
+                  <SimCard icon={Package} title="Pedidos Pagos" value={String(simulacao.pedidosPagos)} />
                   <SimCard icon={DollarSign} title="Faturamento" value={fmt(simulacao.fatEsperado)} />
                   <SimCard icon={Calculator} title="Lucro Esperado" value={fmt(simulacao.lucroEsperado)} color={simulacao.lucroEsperado >= 0 ? "text-chart-2" : "text-destructive"} />
                   <SimCard icon={TrendingUp} title="ROI" value={`${simulacao.roi.toFixed(0)}%`} color={simulacao.roi >= 0 ? "text-chart-2" : "text-destructive"} />
@@ -324,15 +376,33 @@ export default function Projecao() {
                         <XAxis dataKey="nome" className="text-xs" />
                         <YAxis className="text-xs" />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar
-                          dataKey="valor"
-                          radius={[4, 4, 0, 0]}
-                          fill="hsl(var(--primary))"
-                        />
+                        <Bar dataKey="valor" radius={[4, 4, 0, 0]} fill="hsl(var(--primary))" />
                       </BarChart>
                     </ChartContainer>
                   </CardContent>
                 </Card>
+
+                {fluxoCaixaData.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4" />
+                        Fluxo de Caixa — Pagamentos por dia (ciclo de 12 dias)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ChartContainer config={fluxoChartConfig} className="h-[300px] w-full">
+                        <BarChart data={fluxoCaixaData}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                          <XAxis dataKey="dia" className="text-xs" angle={-45} textAnchor="end" height={50} />
+                          <YAxis className="text-xs" />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar dataKey="pagamentos" radius={[4, 4, 0, 0]} fill="hsl(var(--chart-2))" />
+                        </BarChart>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+                )}
               </>
             ) : (
               <Card>
