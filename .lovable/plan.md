@@ -1,23 +1,10 @@
 
 
-## Diferença: Com Nuvem vs Sem Nuvem
+Ambos funcionam, mas **CSV** seria o ideal — é o formato mais simples para importação automática. Porém, entre PDF e XLSX:
 
-### Com Lovable Cloud (Supabase) ✅
-- **Dados persistentes** na nuvem — acessíveis de qualquer dispositivo
-- **Autenticação** com email/senha (login/cadastro)
-- **Múltiplos usuários** podem usar o app, cada um com seus dados
-- **Segurança** — dados protegidos por políticas de acesso (RLS)
-- **Escalável** — funciona como um app real de produção
+- **XLSX** (Excel) — **muito melhor**. Consigo ler as colunas, tipos de dados e mapear direto para o banco de dados. Também posso usar esse formato para criar a funcionalidade de importação no app.
 
-### Sem Nuvem (apenas frontend) ⚠️
-- Dados ficam apenas no **localStorage do navegador** — se limpar o cache, perde tudo
-- **Sem login** — qualquer pessoa com o link vê os mesmos dados
-- Dados **não sincronizam** entre dispositivos (celular ≠ computador)
-- Funciona como um **protótipo/demo**, não como app real
-- Não é possível implementar autenticação nem controle de acesso
+- **PDF** — funciona, mas é mais difícil extrair dados estruturados. Só recomendo se não tiver outra opção.
 
-### Recomendação para o PAD Manager
-O PAD Manager precisa de banco de dados para funcionar de verdade — são pedidos, clientes, anúncios, métricas financeiras. **Sem nuvem, seria apenas um protótipo visual** sem dados reais persistentes.
-
-👉 **Recomendo habilitar o Lovable Cloud** para seguir com a implementação completa do plano.
+**Recomendação**: Exporte sua planilha do Google Sheets como **XLSX** (Arquivo → Fazer download → Microsoft Excel) e compartilhe aqui. Se preferir, pode exportar como **CSV** também — ambos funcionam perfeitamente.
 
