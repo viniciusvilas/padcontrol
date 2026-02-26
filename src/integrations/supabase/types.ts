@@ -41,6 +41,36 @@ export type Database = {
         }
         Relationships: []
       }
+      metas: {
+        Row: {
+          created_at: string
+          id: string
+          mes: string
+          meta_faturamento: number
+          meta_pedidos: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mes: string
+          meta_faturamento?: number
+          meta_pedidos?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mes?: string
+          meta_faturamento?: number
+          meta_pedidos?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pedidos: {
         Row: {
           cliente: string
