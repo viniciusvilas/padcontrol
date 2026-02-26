@@ -1,47 +1,48 @@
 
 
-## Plano: Importação de Pedidos da Planilha
+## Plano: Dashboard Financeiro
 
-### Mapeamento de Colunas (Planilha → Banco de Dados)
+### Dados Disponíveis
 
-```text
-Planilha                  →  Campo no DB (pedidos)
-─────────────────────────────────────────────────
-DATA                      →  data
-NOME                      →  cliente
-VALOR                     →  valor
-TICKET                    →  produto (T1, T2, T3)
-NUMERO                    →  telefone
-ENTREGA                   →  local_entrega (CASA/CORREIOS)
-DIAS_UTEIS                →  prazo
-PREVISAO_CHEGADA          →  previsao_entrega
-JA_CHEGOU?                →  pedido_chegou
-JA_FOI_CHAMADO            →  ja_foi_chamado
-JA_FOI_COBRADO            →  cliente_cobrado
-STATUS_DA_COBRANCA        →  status (mapeado)
-GANHO_OU_PERDA            →  pedido_pago/pedido_perdido
-```
+Todos os dados vêm da tabela `pedidos` do usuário logado. Cada pedido tem: `data`, `valor`, `plataforma` (Five/Keed), `pedido_pago`, `pedido_perdido`, `status`.
 
-Colunas ignoradas (calculadas ou redundantes): `DIA_QUE_CHEGOU`, `DIAS_POS_ENTREGA`, `RISCO_INADIMPLENCIA`, `NOME_MAIUSCULO`.
+Regras financeiras: frete Five = R$35 por pedido, Keed = R$0. Lucro líquido = valor bruto - frete.
+
+### Componentes do Dashboard
+
+**1. Filtro de período** - Seletor com opções: Últimos 7 dias, 30 dias, 90 dias, Este mês, Tudo.
+
+**2. Cards de resumo (topo)**
+- Faturamento Bruto total
+- Frete acumulado (Five)
+- Lucro Líquido
+- Total de Pedidos
+- Taxa de conversão (pagos / total)
+
+**3. Gráfico de Barras - Faturamento por mês** (Recharts BarChart)
+- Agrupa pedidos por mês (formato MMM/yyyy)
+- Barras empilhadas: valor bruto vs frete
+- Eixo X = mês, Eixo Y = R$
+
+**4. Gráfico de Linha - Lucro líquido acumulado** (Recharts LineChart)
+- Linha mostrando a evolução do lucro líquido acumulado ao longo dos meses
+
+**5. Gráfico de Pizza - Distribuição por produto** (Recharts PieChart)
+- Fatias: 3+1, 5+1, 12
+- Mostra quantidade e percentual
+
+**6. Gráfico de Barras - Pedidos por status** (Recharts BarChart horizontal)
+- Criado, Aguardando, Em Cobrança, Pago, Perdido
 
 ### Implementação
 
-1. **Criar página de Pedidos completa (Fase 2)** com listagem, filtros e formulário de cadastro manual, incluindo tabela com cores por status.
+1. **Reescrever `src/pages/Dashboard.tsx`** com:
+   - Query dos pedidos via TanStack Query (mesmo padrão da página Pedidos)
+   - Lógica de agrupamento por mês usando `date-fns`
+   - Filtro de período com estado local
+   - 4 gráficos usando `recharts` + componentes `ChartContainer`/`ChartTooltip` do shadcn/ui
+   - Cards de métricas no topo
+   - Layout responsivo em grid
 
-2. **Adicionar funcionalidade de importação CSV/XLSX** na página de Pedidos:
-   - Botão "Importar Planilha" que aceita `.xlsx` e `.csv`
-   - Instalar biblioteca `xlsx` (SheetJS) para parse de arquivos Excel no navegador
-   - Tela de mapeamento mostrando preview dos dados antes de confirmar
-   - Lógica de conversão: datas BR (dd/mm/yyyy), booleans (TRUE/FALSE), valores numéricos
-   - Filtragem de linhas vazias (como as linhas sem nome no final da planilha)
-   - Inserção em lote no banco de dados via Supabase
-
-3. **Dados da planilha** (~50 pedidos reais) serão importados automaticamente com o mapeamento correto, incluindo status derivado (PAGO → `pedido_pago=true`, GANHO/PERDA, etc.).
-
-### Detalhes Técnicos
-
-- **Biblioteca**: `xlsx` (SheetJS) para parse client-side de XLSX
-- **Validação**: linhas sem `cliente` ou `valor` serão descartadas
-- **Conversão de status**: `GANHO_OU_PERDA="GANHO"` → `pedido_pago=true`; `"PERDA"` → `pedido_perdido=true`
-- **Datas**: parse de formato `dd/mm/yyyy` e `m/d/yy` para formato ISO
+Nenhuma mudança no banco de dados é necessária.
 
