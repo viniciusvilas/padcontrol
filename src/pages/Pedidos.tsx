@@ -138,34 +138,56 @@ export default function Pedidos() {
           <TableHeader>
             <TableRow>
               <TableHead>Cliente</TableHead>
-              <TableHead>Valor</TableHead>
+              <TableHead>Telefone</TableHead>
               <TableHead>Produto</TableHead>
+              <TableHead>Valor</TableHead>
+              <TableHead>Plataforma</TableHead>
               <TableHead>Data</TableHead>
+              <TableHead>Prazo</TableHead>
+              <TableHead>Previsão</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Estado</TableHead>
               <TableHead>Entrega</TableHead>
+              <TableHead>Rastreio</TableHead>
               <TableHead>Chegou</TableHead>
+              <TableHead>Chamado</TableHead>
               <TableHead>Cobrado</TableHead>
+              <TableHead>Pago</TableHead>
+              <TableHead>Perdido</TableHead>
               <TableHead className="w-[80px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={18} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nenhum pedido encontrado</TableCell></TableRow>
+              <TableRow><TableCell colSpan={18} className="text-center py-8 text-muted-foreground">Nenhum pedido encontrado</TableCell></TableRow>
             ) : (
               filtered.map((p) => (
                 <TableRow key={p.id}>
-                  <TableCell className="font-medium">{p.cliente}</TableCell>
-                  <TableCell>R$ {Number(p.valor).toFixed(2)}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{p.cliente}</TableCell>
+                  <TableCell className="whitespace-nowrap">{p.telefone || "—"}</TableCell>
                   <TableCell>{p.produto}</TableCell>
-                  <TableCell>{p.data}</TableCell>
+                  <TableCell className="whitespace-nowrap">R$ {Number(p.valor).toFixed(2)}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={p.plataforma === "Five" ? "bg-amber-500/15 text-amber-700 border-amber-200" : "bg-blue-500/15 text-blue-700 border-blue-200"}>
+                      {p.plataforma}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">{p.data}</TableCell>
+                  <TableCell>{p.prazo}d</TableCell>
+                  <TableCell className="whitespace-nowrap">{p.previsao_entrega || "—"}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={statusStyle(p.status)}>{p.status}</Badge>
                   </TableCell>
+                  <TableCell>{p.estado || "—"}</TableCell>
                   <TableCell>{p.local_entrega || "—"}</TableCell>
+                  <TableCell className="whitespace-nowrap text-xs">{p.rastreio || "—"}</TableCell>
                   <TableCell>{p.pedido_chegou ? "✅" : "—"}</TableCell>
+                  <TableCell>{p.ja_foi_chamado ? "✅" : "—"}</TableCell>
                   <TableCell>{p.cliente_cobrado ? "✅" : "—"}</TableCell>
+                  <TableCell>{p.pedido_pago ? "✅" : "—"}</TableCell>
+                  <TableCell>{p.pedido_perdido ? "❌" : "—"}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditPedido(p); setFormOpen(true); }}>
