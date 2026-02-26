@@ -36,14 +36,13 @@ export default function Anuncios() {
     enabled: !!user,
   });
 
-  const { data: pedidosPagos = 0 } = useQuery({
-    queryKey: ["pedidos-pagos-count", user?.id],
+  const { data: pedidosCount = 0 } = useQuery({
+    queryKey: ["pedidos-total-count", user?.id],
     queryFn: async () => {
       const { count, error } = await supabase
         .from("pedidos")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", user!.id)
-        .eq("pedido_pago", true);
+        .eq("user_id", user!.id);
       if (error) throw error;
       return count || 0;
     },
@@ -100,7 +99,7 @@ export default function Anuncios() {
   const closeForm = () => { setFormOpen(false); setEditing(null); };
 
   const totalInvestido = anuncios.reduce((s, a) => s + Number(a.valor_investido), 0);
-  const cpaMedio = pedidosPagos > 0 ? totalInvestido / pedidosPagos : 0;
+  const cpaMedio = pedidosCount > 0 ? totalInvestido / pedidosCount : 0;
 
   return (
     <div className="space-y-6">
@@ -130,10 +129,10 @@ export default function Anuncios() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Pedidos Pagos</CardTitle>
+            <CardTitle className="text-sm font-medium">Pedidos Feitos</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent><div className="text-2xl font-bold">{pedidosPagos}</div></CardContent>
+          <CardContent><div className="text-2xl font-bold">{pedidosCount}</div></CardContent>
         </Card>
       </div>
 
