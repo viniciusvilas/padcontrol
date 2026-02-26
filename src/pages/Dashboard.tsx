@@ -178,7 +178,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         <MetricCard title="Lucro (Pagos)" icon={DollarSign} value={`R$ ${lucroPagos.toFixed(2)}`} className="text-primary" />
         <MetricCard title="Valor Agendado (Total)" icon={Package} value={`R$ ${valorAgendadoTotal.toFixed(2)}`} />
-        <MetricCard title="Agendado (s/ Pagos)" icon={Package} value={`R$ ${valorAgendadoSemPagos.toFixed(2)}`} />
+        <MetricCard title="Faturamento Pagos" icon={DollarSign} value={`R$ ${faturamentoPagos.toFixed(2)}`} className="text-primary" />
         <MetricCard title="Investimento Anúncios" icon={Megaphone} value={`R$ ${totalInvestido.toFixed(2)}`} className="text-destructive" />
       </div>
 
