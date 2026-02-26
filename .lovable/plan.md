@@ -1,23 +1,32 @@
 
 
-## Correções no Dashboard
+## Plano: Ajustar Projeção com pedidos reais e fluxo de caixa
 
-### 1. Corrigir cálculo do Lucro
-**Atual:** `Lucro = soma(valor dos pagos) - frete Five dos pagos`
-**Correto:** `Lucro = soma(valor dos pagos) - investimento em anúncios - (R$35 × pedidos perdidos Five)`
-- Pedidos pagos: o frete volta, então não desconta
-- Pedidos perdidos na plataforma Five: prejuízo de R$35 cada
-- Subtrair o total investido em anúncios do período
+### Seção 1 — Chegada & Inadimplência (pedidos reais)
 
-### 2. Adicionar métricas faltantes
-- **Aguardando Pagamento**: pedidos com `pedido_chegou = true`, `pedido_pago = false`, `pedido_perdido = false`
-- **Em Prioridade**: pedidos com `cliente_cobrado = true`, `pedido_pago = false`, `pedido_perdido = false`
+**Mudança principal**: Em vez de projetar pedidos inexistentes com base em média, usar os pedidos já existentes que têm `previsao_entrega` dentro do período selecionado (hoje + X dias).
 
-### 3. Corrigir gráfico "Pedidos Feitos" (agrupamento por dia)
-- Quando agrupado por "dia", gerar os últimos 14 dias fixos (de hoje - 13 até hoje)
-- Preencher dias sem pedidos com `count: 0`
-- Ordenar do mais antigo para o mais recente
+- Filtrar pedidos onde `previsao_entrega` cai entre hoje e hoje + dias selecionados, e que ainda não foram pagos nem perdidos
+- Data de pagamento estimada = `previsao_entrega + 3 dias`
+- Tabela de cenários aplica as faixas de inadimplência (0%-50%) sobre esses pedidos reais filtrados
+- Mostrar total de pedidos encontrados no período, faturamento e lucro por cenário
 
-### Arquivo alterado
-- `src/pages/Dashboard.tsx`
+### Seção 2 — Simulador de Investimento
+
+**Novos inputs**:
+- Slider/input de **% inadimplência esperada** (0-50%)
+- O cálculo de pedidos pagos = pedidos esperados × (1 - inadimplência%)
+
+**Fluxo de caixa médio (12 dias)**:
+- Cada pedido gerado na simulação tem pagamento estimado em `data_pedido + 12 dias`
+- Distribuir os pedidos esperados uniformemente ao longo do período de investimento
+- Gerar gráfico de barras por dia mostrando quantidade de pagamentos previstos, incluindo dias além do período de investimento (até último pagamento = último dia + 12)
+
+### Detalhes técnicos
+
+- **Arquivo**: `src/pages/Projecao.tsx` — reescrever lógica dos dois `useMemo` e adicionar novo state + gráfico
+- Novo state: `inadimplenciaSim` para o slider de % no simulador
+- Novo `useMemo` para gerar `fluxoCaixaData` (array de `{dia, pagamentos}`)
+- Novo gráfico `BarChart` para o fluxo de caixa diário
+- Imports adicionais: `addDays, format` do `date-fns`
 
