@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Package, Upload, Plus, Search, Filter, Pencil, Trash2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Package, Upload, Plus, Search, Filter, Pencil, Trash2, Megaphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImportPedidosDialog from "@/components/ImportPedidosDialog";
@@ -14,6 +15,8 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Pedido = Tables<"pedidos">;
+
+const FRETE_FIVE = 35;
 
 const STATUS_OPTIONS = [
   { value: "todos", label: "Todos" },
@@ -36,6 +39,7 @@ const statusStyle = (s: string) => {
 
 export default function Pedidos() {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const [importOpen, setImportOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editPedido, setEditPedido] = useState<Pedido | null>(null);
@@ -46,13 +50,19 @@ export default function Pedidos() {
     queryKey: ["pedidos", user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
-        .from("pedidos")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("data", { ascending: false });
+      const { data, error } = await supabase.from("pedidos").select("*").eq("user_id", user.id).order("data", { ascending: false });
       if (error) throw error;
       return data as Pedido[];
+    },
+    enabled: !!user,
+  });
+
+  const { data: totalAnuncios = 0 } = useQuery({
+    queryKey: ["anuncios-total", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("anuncios").select("valor_investido").eq("user_id", user!.id);
+      if (error) throw error;
+      return data.reduce((s, a) => s + Number(a.valor_investido), 0);
     },
     enabled: !!user,
   });
@@ -63,9 +73,16 @@ export default function Pedidos() {
     return matchSearch && matchStatus;
   });
 
+  const pagos = filtered.filter((p) => p.pedido_pago);
+  const lucroLiquido = pagos.reduce((s, p) => s + Number(p.valor) - (p.plataforma === "Five" ? FRETE_FIVE : 0), 0);
   const totalValor = filtered.reduce((sum, p) => sum + Number(p.valor), 0);
-  const totalFrete = filtered.filter((p) => p.plataforma === "Five").length * 35;
-  const totalLiquido = totalValor - totalFrete;
+
+  const toggleField = async (pedido: Pedido, field: "pedido_chegou" | "ja_foi_chamado" | "cliente_cobrado" | "pedido_pago" | "pedido_perdido") => {
+    const newVal = !(pedido as any)[field];
+    const { error } = await supabase.from("pedidos").update({ [field]: newVal }).eq("id", pedido.id);
+    if (error) { toast.error("Erro ao atualizar"); return; }
+    qc.invalidateQueries({ queryKey: ["pedidos"] });
+  };
 
   return (
     <div>
@@ -76,12 +93,8 @@ export default function Pedidos() {
           <Badge variant="secondary" className="ml-1">{filtered.length}</Badge>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => { setEditPedido(null); setFormOpen(true); }}>
-            <Plus className="h-4 w-4 mr-1" /> Novo Pedido
-          </Button>
-          <Button variant="outline" onClick={() => setImportOpen(true)}>
-            <Upload className="h-4 w-4 mr-1" /> Importar
-          </Button>
+          <Button onClick={() => { setEditPedido(null); setFormOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Novo Pedido</Button>
+          <Button variant="outline" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4 mr-1" /> Importar</Button>
         </div>
       </div>
 
@@ -92,44 +105,19 @@ export default function Pedidos() {
           <Input placeholder="Buscar por cliente ou produto..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <Filter className="h-4 w-4 mr-1" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-            ))}
-          </SelectContent>
+          <SelectTrigger className="w-[180px]"><Filter className="h-4 w-4 mr-1" /><SelectValue /></SelectTrigger>
+          <SelectContent>{STATUS_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
         </Select>
       </div>
 
       {/* Summary bar */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
-        <div className="bg-card rounded-lg border p-3">
-          <p className="text-xs text-muted-foreground">Total</p>
-          <p className="text-lg font-bold">{filtered.length}</p>
-        </div>
-        <div className="bg-card rounded-lg border p-3">
-          <p className="text-xs text-muted-foreground">Valor Bruto</p>
-          <p className="text-lg font-bold">R$ {totalValor.toFixed(2)}</p>
-        </div>
-        <div className="bg-card rounded-lg border p-3">
-          <p className="text-xs text-muted-foreground">Frete (Five)</p>
-          <p className="text-lg font-bold text-amber-600">R$ {totalFrete.toFixed(2)}</p>
-        </div>
-        <div className="bg-card rounded-lg border p-3">
-          <p className="text-xs text-muted-foreground">Líquido</p>
-          <p className="text-lg font-bold text-primary">R$ {totalLiquido.toFixed(2)}</p>
-        </div>
-        <div className="bg-card rounded-lg border p-3">
-          <p className="text-xs text-muted-foreground">Pagos</p>
-          <p className="text-lg font-bold text-emerald-600">{filtered.filter((p) => p.pedido_pago).length}</p>
-        </div>
-        <div className="bg-card rounded-lg border p-3">
-          <p className="text-xs text-muted-foreground">Perdidos</p>
-          <p className="text-lg font-bold text-red-600">{filtered.filter((p) => p.pedido_perdido).length}</p>
-        </div>
+        <SummaryCard label="Total" value={String(filtered.length)} />
+        <SummaryCard label="Valor Bruto" value={`R$ ${totalValor.toFixed(2)}`} />
+        <SummaryCard label="Investimento Anúncios" value={`R$ ${totalAnuncios.toFixed(2)}`} className="text-amber-600" icon={<Megaphone className="h-3 w-3" />} />
+        <SummaryCard label="Lucro (Pagos)" value={`R$ ${lucroLiquido.toFixed(2)}`} className="text-primary" />
+        <SummaryCard label="Pagos" value={String(pagos.length)} className="text-emerald-600" />
+        <SummaryCard label="Perdidos" value={String(filtered.filter((p) => p.pedido_perdido).length)} className="text-red-600" />
       </div>
 
       {/* Table */}
@@ -171,35 +159,27 @@ export default function Pedidos() {
                   <TableCell>{p.produto}</TableCell>
                   <TableCell className="whitespace-nowrap">R$ {Number(p.valor).toFixed(2)}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={p.plataforma === "Five" ? "bg-amber-500/15 text-amber-700 border-amber-200" : "bg-blue-500/15 text-blue-700 border-blue-200"}>
-                      {p.plataforma}
-                    </Badge>
+                    <Badge variant="outline" className={p.plataforma === "Five" ? "bg-amber-500/15 text-amber-700 border-amber-200" : "bg-blue-500/15 text-blue-700 border-blue-200"}>{p.plataforma}</Badge>
                   </TableCell>
                   <TableCell>{p.prazo}d</TableCell>
                   <TableCell className="whitespace-nowrap">{p.previsao_entrega || "—"}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={statusStyle(p.status)}>{p.status}</Badge>
-                  </TableCell>
+                  <TableCell><Badge variant="outline" className={statusStyle(p.status)}>{p.status}</Badge></TableCell>
                   <TableCell>{p.estado || "—"}</TableCell>
                   <TableCell>{p.local_entrega || "—"}</TableCell>
                   <TableCell className="whitespace-nowrap text-xs">{p.rastreio || "—"}</TableCell>
-                  <TableCell>{p.pedido_chegou ? "✅" : "—"}</TableCell>
-                  <TableCell>{p.ja_foi_chamado ? "✅" : "—"}</TableCell>
-                  <TableCell>{p.cliente_cobrado ? "✅" : "—"}</TableCell>
-                  <TableCell>{p.pedido_pago ? "✅" : "—"}</TableCell>
-                  <TableCell>{p.pedido_perdido ? "❌" : "—"}</TableCell>
+                  <TableCell><Checkbox checked={p.pedido_chegou} onCheckedChange={() => toggleField(p, "pedido_chegou")} /></TableCell>
+                  <TableCell><Checkbox checked={p.ja_foi_chamado} onCheckedChange={() => toggleField(p, "ja_foi_chamado")} /></TableCell>
+                  <TableCell><Checkbox checked={p.cliente_cobrado} onCheckedChange={() => toggleField(p, "cliente_cobrado")} /></TableCell>
+                  <TableCell><Checkbox checked={p.pedido_pago} onCheckedChange={() => toggleField(p, "pedido_pago")} /></TableCell>
+                  <TableCell><Checkbox checked={p.pedido_perdido} onCheckedChange={() => toggleField(p, "pedido_perdido")} /></TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditPedido(p); setFormOpen(true); }}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditPedido(p); setFormOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={async () => {
                         const { error } = await supabase.from("pedidos").delete().eq("id", p.id);
                         if (error) toast.error("Erro ao excluir");
                         else { toast.success("Pedido excluído"); refetch(); }
-                      }}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      }}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -211,6 +191,15 @@ export default function Pedidos() {
 
       <ImportPedidosDialog open={importOpen} onOpenChange={setImportOpen} onSuccess={refetch} />
       <PedidoFormDialog open={formOpen} onOpenChange={setFormOpen} onSuccess={refetch} pedido={editPedido} />
+    </div>
+  );
+}
+
+function SummaryCard({ label, value, className, icon }: { label: string; value: string; className?: string; icon?: React.ReactNode }) {
+  return (
+    <div className="bg-card rounded-lg border p-3">
+      <p className="text-xs text-muted-foreground flex items-center gap-1">{icon}{label}</p>
+      <p className={`text-lg font-bold ${className || ""}`}>{value}</p>
     </div>
   );
 }
