@@ -84,7 +84,7 @@ export default function Dashboard() {
   const qtdPagos = pagos.length;
   const qtdAguardando = filtered.filter((p) => !p.pedido_pago && !p.pedido_perdido).length;
   const totalInvestido = filteredAnuncios.reduce((s, a) => s + Number(a.valor_investido), 0);
-  const cpaMedio = qtdPagos > 0 ? totalInvestido / qtdPagos : 0;
+  const cpaMedio = qtdPedidos > 0 ? totalInvestido / qtdPedidos : 0;
 
   // CPA do dia
   const today = format(new Date(), "yyyy-MM-dd");
