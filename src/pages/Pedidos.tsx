@@ -137,12 +137,12 @@ export default function Pedidos() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Data</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Telefone</TableHead>
               <TableHead>Produto</TableHead>
               <TableHead>Valor</TableHead>
               <TableHead>Plataforma</TableHead>
-              <TableHead>Data</TableHead>
               <TableHead>Prazo</TableHead>
               <TableHead>Previsão</TableHead>
               <TableHead>Status</TableHead>
@@ -165,6 +165,7 @@ export default function Pedidos() {
             ) : (
               filtered.map((p) => (
                 <TableRow key={p.id}>
+                  <TableCell className="whitespace-nowrap">{p.data}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap">{p.cliente}</TableCell>
                   <TableCell className="whitespace-nowrap">{p.telefone || "—"}</TableCell>
                   <TableCell>{p.produto}</TableCell>
@@ -174,7 +175,6 @@ export default function Pedidos() {
                       {p.plataforma}
                     </Badge>
                   </TableCell>
-                  <TableCell className="whitespace-nowrap">{p.data}</TableCell>
                   <TableCell>{p.prazo}d</TableCell>
                   <TableCell className="whitespace-nowrap">{p.previsao_entrega || "—"}</TableCell>
                   <TableCell>

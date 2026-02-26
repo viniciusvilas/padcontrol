@@ -1,5 +1,5 @@
 import {
-  Package, Clock, Phone, AlertTriangle, CheckCircle, XCircle,
+  Package, Clock, Phone, PhoneCall, AlertTriangle, CheckCircle, XCircle,
   Megaphone, LayoutDashboard, TrendingUp, Trophy, LogOut
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 const menuPedidos = [
   { title: "Todos os Pedidos", url: "/", icon: Package },
   { title: "Prestes a Chegar", url: "/prestes-a-chegar", icon: Clock },
+  { title: "Falta Chamar", url: "/falta-chamar", icon: PhoneCall },
   { title: "Cobrança", url: "/cobranca", icon: Phone },
   { title: "Prioridade", url: "/prioridade", icon: AlertTriangle },
   { title: "Pagos", url: "/pagos", icon: CheckCircle },
