@@ -64,6 +64,8 @@ export default function Pedidos() {
   });
 
   const totalValor = filtered.reduce((sum, p) => sum + Number(p.valor), 0);
+  const totalFrete = filtered.filter((p) => p.plataforma === "Five").length * 35;
+  const totalLiquido = totalValor - totalFrete;
 
   return (
     <div>
@@ -103,14 +105,22 @@ export default function Pedidos() {
       </div>
 
       {/* Summary bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
         <div className="bg-card rounded-lg border p-3">
           <p className="text-xs text-muted-foreground">Total</p>
           <p className="text-lg font-bold">{filtered.length}</p>
         </div>
         <div className="bg-card rounded-lg border p-3">
-          <p className="text-xs text-muted-foreground">Valor Total</p>
+          <p className="text-xs text-muted-foreground">Valor Bruto</p>
           <p className="text-lg font-bold">R$ {totalValor.toFixed(2)}</p>
+        </div>
+        <div className="bg-card rounded-lg border p-3">
+          <p className="text-xs text-muted-foreground">Frete (Five)</p>
+          <p className="text-lg font-bold text-amber-600">R$ {totalFrete.toFixed(2)}</p>
+        </div>
+        <div className="bg-card rounded-lg border p-3">
+          <p className="text-xs text-muted-foreground">Líquido</p>
+          <p className="text-lg font-bold text-primary">R$ {totalLiquido.toFixed(2)}</p>
         </div>
         <div className="bg-card rounded-lg border p-3">
           <p className="text-xs text-muted-foreground">Pagos</p>
