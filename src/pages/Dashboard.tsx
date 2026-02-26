@@ -77,13 +77,16 @@ export default function Dashboard() {
 
   // Metrics
   const pagos = filtered.filter((p) => p.pedido_pago);
-  const lucroPagos = pagos.reduce((s, p) => s + Number(p.valor) - (p.plataforma === "Five" ? FRETE_FIVE : 0), 0);
+  const perdidosFive = filtered.filter((p) => p.pedido_perdido && p.plataforma === "Five");
   const valorAgendadoTotal = filtered.reduce((s, p) => s + Number(p.valor), 0);
   const valorAgendadoSemPagos = filtered.filter((p) => !p.pedido_pago).reduce((s, p) => s + Number(p.valor), 0);
   const qtdPedidos = filtered.length;
   const qtdPagos = pagos.length;
-  const qtdAguardando = filtered.filter((p) => !p.pedido_pago && !p.pedido_perdido).length;
+  const qtdAguardandoPgto = filtered.filter((p) => p.pedido_chegou && !p.pedido_pago && !p.pedido_perdido).length;
+  const qtdPrioridade = filtered.filter((p) => p.cliente_cobrado && !p.pedido_pago && !p.pedido_perdido).length;
   const totalInvestido = filteredAnuncios.reduce((s, a) => s + Number(a.valor_investido), 0);
+  const faturamentoPagos = pagos.reduce((s, p) => s + Number(p.valor), 0);
+  const lucroPagos = faturamentoPagos - totalInvestido - (perdidosFive.length * FRETE_FIVE);
   const cpaMedio = qtdPedidos > 0 ? totalInvestido / qtdPedidos : 0;
 
   // CPA do dia
@@ -115,7 +118,21 @@ export default function Dashboard() {
     return Array.from(map.entries()).map(([label, count]) => ({ label, count }));
   };
 
-  const ordersData = useMemo(() => groupByTime(filtered, ordersGroupBy), [filtered, ordersGroupBy]);
+  // Fixed 14-day chart for orders grouped by day
+  const buildLast14Days = (items: typeof pedidos) => {
+    const today = new Date();
+    const days: { label: string; count: number }[] = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = subDays(today, i);
+      const key = format(d, "yyyy-MM-dd");
+      const label = format(d, "dd/MM");
+      const count = items.filter((p) => p.data === key).length;
+      days.push({ label, count });
+    }
+    return days;
+  };
+
+  const ordersData = useMemo(() => ordersGroupBy === "day" ? buildLast14Days(filtered) : groupByTime(filtered, ordersGroupBy), [filtered, ordersGroupBy]);
   const paymentsData = useMemo(() => groupByTime(pagos, paymentsGroupBy), [pagos, paymentsGroupBy]);
 
   // Status pie
@@ -169,7 +186,8 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         <MetricCard title="Pedidos Feitos" icon={Package} value={String(qtdPedidos)} />
         <MetricCard title="Pedidos Pagos" icon={TrendingUp} value={String(qtdPagos)} className="text-primary" />
-        <MetricCard title="Aguardando Pgto" icon={Truck} value={String(qtdAguardando)} />
+        <MetricCard title="Aguardando Pgto" icon={Truck} value={String(qtdAguardandoPgto)} />
+        <MetricCard title="Em Prioridade" icon={AlertTriangle} value={String(qtdPrioridade)} />
         <MetricCard title="CPA Médio" icon={Target} value={`R$ ${cpaMedio.toFixed(2)}`} />
       </div>
 
