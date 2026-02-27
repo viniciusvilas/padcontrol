@@ -21,7 +21,8 @@ export default function Cobranca() {
         .from("pedidos")
         .select("*")
         .eq("user_id", user.id)
-        .eq("status", "em_cobranca")
+        .eq("pedido_chegou", true)
+        .eq("cliente_cobrado", false)
         .eq("pedido_pago", false)
         .eq("pedido_perdido", false)
         .order("data", { ascending: false });
