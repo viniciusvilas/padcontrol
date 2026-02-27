@@ -1,22 +1,30 @@
 
 
-## Plano: Registrar data de entrega ao marcar pedido como chegou
+## Transformar em app instalavel
 
-### Problema
-Atualmente, a página Prioridade calcula os dias usando `p.data` (data do pedido). Se um pedido atrasa para chegar, os dias ficam inflados e ele aparece como prioridade alta indevidamente.
+Sim, e com pouco trabalho. Existem duas abordagens:
 
-### Solução
-Adicionar coluna `data_entrega` (date, nullable) na tabela `pedidos`. Sempre que `pedido_chegou` for marcado como `true`, registrar `data_entrega = hoje`. A página Prioridade usará `data_entrega` em vez de `data` para calcular os dias desde a entrega.
+### Opção 1: App Instalavel via navegador (PWA) — Recomendado
+- Funciona em **celular e PC**
+- O usuario acessa o site e clica em "Instalar" no navegador
+- Fica com icone na tela inicial / area de trabalho, abre sem barra do navegador
+- Funciona offline para telas ja carregadas
+- **Nenhuma loja de apps necessaria** (ideal para poucas pessoas)
+- Trabalho: **pequeno** — configurar manifest, icones e service worker
 
-### Implementação
+### Opção 2: App nativo (Capacitor)
+- App real publicado na App Store / Google Play
+- Acesso total a recursos do celular (notificacoes push, camera, etc.)
+- Requer Xcode (iOS) e Android Studio (Android) na sua maquina
+- Trabalho: **medio a alto** — setup local, build, publicacao nas lojas
 
-1. **Migration**: Adicionar coluna `data_entrega` (date, nullable) à tabela `pedidos`
+### Recomendacao
 
-2. **`src/pages/PrestesAChegar.tsx`**: Na função `marcarChegou`, incluir `data_entrega: new Date().toISOString().split('T')[0]` no update
+Para **poucas pessoas** e sem necessidade de loja de apps, a **Opção 1 (PWA)** e a melhor escolha. O usuario so precisa acessar o link e instalar pelo navegador. Funciona tanto no celular quanto no PC.
 
-3. **`src/pages/Pedidos.tsx`**: No `toggleField`, quando o campo for `pedido_chegou`, setar `data_entrega` para a data de hoje se ativando, ou `null` se desativando
-
-4. **`src/pages/Prioridade.tsx`**: Alterar `diasDesdeCobranca` para usar `p.data_entrega ?? p.data` como fallback (compatibilidade com pedidos antigos sem data_entrega)
-
-5. **`src/components/PedidoFormDialog.tsx`**: Ao marcar `pedido_chegou` no formulário, também setar `data_entrega`
+### Implementacao (PWA)
+1. Instalar `vite-plugin-pwa` e configurar no `vite.config.ts`
+2. Criar manifest com nome, icones e cores do app
+3. Adicionar meta tags mobile no `index.html`
+4. Criar pagina `/install` com instrucoes para o usuario instalar
 
