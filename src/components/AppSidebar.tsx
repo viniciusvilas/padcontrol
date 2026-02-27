@@ -1,6 +1,6 @@
 import {
   Package, Clock, Phone, PhoneCall, AlertTriangle, CheckCircle, XCircle,
-  Megaphone, LayoutDashboard, TrendingUp, Trophy, LogOut
+  Megaphone, LayoutDashboard, TrendingUp, Trophy, LogOut, Download
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -34,6 +34,7 @@ const menuGeral = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Projeção", url: "/projecao", icon: TrendingUp },
   { title: "Nível", url: "/nivel", icon: Trophy },
+  { title: "Instalar App", url: "/install", icon: Download },
 ];
 
 export function AppSidebar() {
