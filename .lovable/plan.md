@@ -1,23 +1,33 @@
 
 
-## Plano: Dois novos gráficos no Simulador de Investimento
+## Plano: Distribuição aleatória de pedidos por dia no simulador
 
-### Gráfico 1 — Pagamentos em R$ por dia
-- Substituir o gráfico atual de fluxo de caixa (que mostra quantidade de pagamentos) por um gráfico de colunas verticais mostrando o **valor em R$** dos pagamentos recebidos em cada dia
-- Do dia 1 da projeção até o último pagamento (dia final + 12 dias do ciclo)
-- Cada barra = `pedidosPorDia × ticketMedioPagos` nos dias em que há recebimento (dias 13 em diante)
+### Problema atual
+O `fluxoCaixaData` distribui pedidos uniformemente (`pedidosPorDia = pedidosPagos / simDias`), resultando em barras idênticas todos os dias no gráfico.
 
-### Gráfico 2 — Acumulado: Gasto vs Receita
-- Novo gráfico de colunas com duas séries sobrepostas por dia (do dia 1 até o último pagamento):
-  - **Gasto acumulado**: soma do investimento diário acumulado até aquele dia
-  - **Receita acumulada**: soma dos pagamentos recebidos acumulados até aquele dia
-- Permite visualizar o ponto de break-even (quando receita ultrapassa gasto)
+### Solução
+Usar uma distribuição aleatória com seed determinística (baseada nos inputs) para que:
+- O total de pedidos pagos no período seja respeitado (mesmo CPA total)
+- Cada dia tenha uma quantidade variável de pedidos (mais realista)
+- O resultado seja reprodutível enquanto os inputs não mudarem
+
+### Implementação — `src/pages/Projecao.tsx`
+
+1. **Criar função de random com seed** (pseudorandom determinístico usando um simple LCG ou mulberry32) para que o gráfico não mude a cada re-render, apenas quando os inputs mudam.
+
+2. **Refatorar `fluxoCaixaData`**:
+   - Em vez de `pedidosPorDia` fixo, distribuir `simulacao.pedidosPagos` pedidos aleatoriamente entre os `simDias` dias
+   - Gerar um array de pesos aleatórios por dia, normalizar para que a soma = `pedidosPagos`
+   - Cada dia terá um número diferente de pedidos, mas o total respeita o CPA
+   - Manter o ciclo de 12 dias para pagamento: pedidos do dia `d` geram pagamento no dia `d + 12`
+
+3. **Seed determinística**: usar hash simples de `simDias + pedidosPagos + investDiario + inadimplenciaSim` para que o cenário mude apenas quando os parâmetros mudam
+
+4. **Botão "Novo Cenário"**: adicionar um botão que incrementa um counter no state (`cenarioSeed`), forçando nova distribuição aleatória mantendo os mesmos parâmetros
 
 ### Detalhes técnicos
-- **Arquivo**: `src/pages/Projecao.tsx`
-- Atualizar `fluxoCaixaData` para incluir valor em R$ (`valorPagamentos`) e campos acumulados (`gastoAcumulado`, `receitaAcumulada`)
-- Gerar array do dia 1 até dia `simDias + 12`, com todos os dias preenchidos
-- Atualizar `fluxoChartConfig` para incluir as novas séries
-- Adicionar novo `ChartConfig` para o gráfico acumulado
-- Substituir o gráfico existente e adicionar o segundo gráfico abaixo
+- Novo state: `cenarioSeed` (number, default 0)
+- Função `seededRandom(seed: number)` retornando gerador determinístico
+- O `useMemo` de `fluxoCaixaData` inclui `cenarioSeed` nas dependências
+- Botão posicionado acima dos gráficos de fluxo de caixa
 
