@@ -1,33 +1,22 @@
 
 
-## Plano: Distribuição aleatória de pedidos por dia no simulador
+## Plano: Registrar data de entrega ao marcar pedido como chegou
 
-### Problema atual
-O `fluxoCaixaData` distribui pedidos uniformemente (`pedidosPorDia = pedidosPagos / simDias`), resultando em barras idênticas todos os dias no gráfico.
+### Problema
+Atualmente, a página Prioridade calcula os dias usando `p.data` (data do pedido). Se um pedido atrasa para chegar, os dias ficam inflados e ele aparece como prioridade alta indevidamente.
 
 ### Solução
-Usar uma distribuição aleatória com seed determinística (baseada nos inputs) para que:
-- O total de pedidos pagos no período seja respeitado (mesmo CPA total)
-- Cada dia tenha uma quantidade variável de pedidos (mais realista)
-- O resultado seja reprodutível enquanto os inputs não mudarem
+Adicionar coluna `data_entrega` (date, nullable) na tabela `pedidos`. Sempre que `pedido_chegou` for marcado como `true`, registrar `data_entrega = hoje`. A página Prioridade usará `data_entrega` em vez de `data` para calcular os dias desde a entrega.
 
-### Implementação — `src/pages/Projecao.tsx`
+### Implementação
 
-1. **Criar função de random com seed** (pseudorandom determinístico usando um simple LCG ou mulberry32) para que o gráfico não mude a cada re-render, apenas quando os inputs mudam.
+1. **Migration**: Adicionar coluna `data_entrega` (date, nullable) à tabela `pedidos`
 
-2. **Refatorar `fluxoCaixaData`**:
-   - Em vez de `pedidosPorDia` fixo, distribuir `simulacao.pedidosPagos` pedidos aleatoriamente entre os `simDias` dias
-   - Gerar um array de pesos aleatórios por dia, normalizar para que a soma = `pedidosPagos`
-   - Cada dia terá um número diferente de pedidos, mas o total respeita o CPA
-   - Manter o ciclo de 12 dias para pagamento: pedidos do dia `d` geram pagamento no dia `d + 12`
+2. **`src/pages/PrestesAChegar.tsx`**: Na função `marcarChegou`, incluir `data_entrega: new Date().toISOString().split('T')[0]` no update
 
-3. **Seed determinística**: usar hash simples de `simDias + pedidosPagos + investDiario + inadimplenciaSim` para que o cenário mude apenas quando os parâmetros mudam
+3. **`src/pages/Pedidos.tsx`**: No `toggleField`, quando o campo for `pedido_chegou`, setar `data_entrega` para a data de hoje se ativando, ou `null` se desativando
 
-4. **Botão "Novo Cenário"**: adicionar um botão que incrementa um counter no state (`cenarioSeed`), forçando nova distribuição aleatória mantendo os mesmos parâmetros
+4. **`src/pages/Prioridade.tsx`**: Alterar `diasDesdeCobranca` para usar `p.data_entrega ?? p.data` como fallback (compatibilidade com pedidos antigos sem data_entrega)
 
-### Detalhes técnicos
-- Novo state: `cenarioSeed` (number, default 0)
-- Função `seededRandom(seed: number)` retornando gerador determinístico
-- O `useMemo` de `fluxoCaixaData` inclui `cenarioSeed` nas dependências
-- Botão posicionado acima dos gráficos de fluxo de caixa
+5. **`src/components/PedidoFormDialog.tsx`**: Ao marcar `pedido_chegou` no formulário, também setar `data_entrega`
 
