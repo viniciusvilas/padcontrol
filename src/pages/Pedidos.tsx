@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Upload, Plus, Search, Filter, Pencil, Trash2, Megaphone } from "lucide-react";
+import { Package, Upload, Plus, Search, Filter, Pencil, Trash2, Megaphone, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -160,8 +160,26 @@ export default function Pedidos() {
                 <TableRow key={p.id}>
                   <TableCell className="whitespace-nowrap">{p.data}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap">{p.cliente}</TableCell>
-                  <TableCell className="whitespace-nowrap">{(p as any).cpf || "—"}</TableCell>
-                  <TableCell className="whitespace-nowrap">{p.telefone || "—"}</TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <span className="flex items-center gap-1">
+                      {(p as any).cpf || "—"}
+                      {(p as any).cpf && (
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText((p as any).cpf); toast.success("CPF copiado!"); }}>
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </span>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <span className="flex items-center gap-1">
+                      {p.telefone || "—"}
+                      {p.telefone && (
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(p.telefone!); toast.success("Telefone copiado!"); }}>
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </span>
+                  </TableCell>
                   <TableCell>{p.produto}</TableCell>
                   <TableCell className="whitespace-nowrap">R$ {Number(p.valor).toFixed(2)}</TableCell>
                   <TableCell>
