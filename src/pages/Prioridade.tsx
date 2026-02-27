@@ -32,8 +32,9 @@ export default function Prioridade() {
     enabled: !!user,
   });
 
-  const diasDesdeCobranca = (data: string) => {
-    return differenceInCalendarDays(new Date(), parseISO(data));
+  const diasDesdeEntrega = (pedido: Pedido) => {
+    const dataRef = (pedido as any).data_entrega ?? pedido.data;
+    return differenceInCalendarDays(new Date(), parseISO(dataRef));
   };
 
   const marcarPago = async (id: string) => {
@@ -77,7 +78,7 @@ export default function Prioridade() {
               <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum pedido pendente de prioridade</TableCell></TableRow>
             ) : (
               pedidos.map((p) => {
-                const dias = diasDesdeCobranca(p.data);
+                const dias = diasDesdeEntrega(p);
                 return (
                   <TableRow key={p.id}>
                     <TableCell>

@@ -79,7 +79,11 @@ export default function Pedidos() {
 
   const toggleField = async (pedido: Pedido, field: "pedido_chegou" | "ja_foi_chamado" | "cliente_cobrado" | "pedido_pago" | "pedido_perdido") => {
     const newVal = !(pedido as any)[field];
-    const { error } = await supabase.from("pedidos").update({ [field]: newVal }).eq("id", pedido.id);
+    const updateData: any = { [field]: newVal };
+    if (field === "pedido_chegou") {
+      updateData.data_entrega = newVal ? new Date().toISOString().split('T')[0] : null;
+    }
+    const { error } = await supabase.from("pedidos").update(updateData).eq("id", pedido.id);
     if (error) { toast.error("Erro ao atualizar"); return; }
     qc.invalidateQueries({ queryKey: ["pedidos"] });
   };

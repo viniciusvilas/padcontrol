@@ -77,6 +77,7 @@ export type Database = {
           cliente_cobrado: boolean
           created_at: string
           data: string
+          data_entrega: string | null
           estado: string | null
           id: string
           ja_foi_chamado: boolean
@@ -101,6 +102,7 @@ export type Database = {
           cliente_cobrado?: boolean
           created_at?: string
           data?: string
+          data_entrega?: string | null
           estado?: string | null
           id?: string
           ja_foi_chamado?: boolean
@@ -125,6 +127,7 @@ export type Database = {
           cliente_cobrado?: boolean
           created_at?: string
           data?: string
+          data_entrega?: string | null
           estado?: string | null
           id?: string
           ja_foi_chamado?: boolean
