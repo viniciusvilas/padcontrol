@@ -48,7 +48,7 @@ export default function PrestesAChegar() {
   };
 
   const marcarChegou = async (id: string) => {
-    const { error } = await supabase.from("pedidos").update({ pedido_chegou: true }).eq("id", id);
+    const { error } = await supabase.from("pedidos").update({ pedido_chegou: true, data_entrega: new Date().toISOString().split('T')[0] } as any).eq("id", id);
     if (error) toast.error("Erro ao atualizar");
     else { toast.success("Marcado como chegou!"); refetch(); }
   };

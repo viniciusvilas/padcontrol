@@ -162,6 +162,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
         cliente_cobrado: form.cliente_cobrado,
         pedido_pago: form.pedido_pago,
         pedido_perdido: form.pedido_perdido,
+        data_entrega: form.pedido_chegou ? (form as any).data_entrega || new Date().toISOString().split('T')[0] : null,
       };
 
       if (isEdit && pedido) {
