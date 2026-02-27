@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
-import { LayoutDashboard, DollarSign, Truck, TrendingUp, Package, Percent, Target, AlertTriangle, Megaphone } from "lucide-react";
+import { LayoutDashboard, DollarSign, Truck, TrendingUp, Package, Percent, Target, AlertTriangle, Megaphone, MapPin } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, subDays, startOfMonth, parseISO, isAfter, differenceInCalendarDays, startOfWeek, endOfWeek } from "date-fns";
+import { format, subDays, startOfMonth, parseISO, isAfter, differenceInCalendarDays, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,15 +28,23 @@ const periodOptions = [
 ];
 
 const PIE_COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(142 76% 36%)"];
+const STATE_PIE_COLORS = [
+  "hsl(var(--primary))", "hsl(var(--accent))", "hsl(142 76% 36%)",
+  "hsl(38 92% 50%)", "hsl(280 65% 60%)", "hsl(200 70% 50%)",
+  "hsl(350 65% 55%)", "hsl(160 60% 45%)", "hsl(45 80% 55%)",
+  "hsl(220 60% 55%)", "hsl(0 70% 55%)", "hsl(100 50% 45%)",
+];
 
 const ordersChartConfig: ChartConfig = { count: { label: "Pedidos", color: "hsl(var(--primary))" } };
 const paymentsChartConfig: ChartConfig = { count: { label: "Pagamentos", color: "hsl(142 76% 36%)" } };
 const statusPieConfig: ChartConfig = { agendados: { label: "Agendados", color: PIE_COLORS[0] }, entregues: { label: "Entregues", color: PIE_COLORS[1] }, pagos: { label: "Pagos", color: PIE_COLORS[2] } };
+const statePieConfig: ChartConfig = { value: { label: "Pedidos" } };
 const stateBarConfig: ChartConfig = { count: { label: "Pedidos", color: "hsl(var(--primary))" } };
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [period, setPeriod] = useState("30");
+  const [estadoFilter, setEstadoFilter] = useState("all");
   const [ordersGroupBy, setOrdersGroupBy] = useState("day");
   const [paymentsGroupBy, setPaymentsGroupBy] = useState("day");
   const [cpaDiaBudget, setCpaDiaBudget] = useState("");
@@ -61,12 +69,27 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  // All unique states for the filter
+  const allEstados = useMemo(() => {
+    const set = new Set<string>();
+    pedidos.forEach((p) => { if (p.estado) set.add(p.estado); });
+    return Array.from(set).sort();
+  }, [pedidos]);
+
   const filtered = useMemo(() => {
-    if (period === "all") return pedidos;
-    const now = new Date();
-    const cutoff = period === "month" ? startOfMonth(now) : subDays(now, Number(period));
-    return pedidos.filter((p) => isAfter(parseISO(p.data), cutoff) || p.data === format(cutoff, "yyyy-MM-dd"));
-  }, [pedidos, period]);
+    let result = pedidos;
+    // Period filter
+    if (period !== "all") {
+      const now = new Date();
+      const cutoff = period === "month" ? startOfMonth(now) : subDays(now, Number(period));
+      result = result.filter((p) => isAfter(parseISO(p.data), cutoff) || p.data === format(cutoff, "yyyy-MM-dd"));
+    }
+    // State filter
+    if (estadoFilter !== "all") {
+      result = result.filter((p) => p.estado === estadoFilter);
+    }
+    return result;
+  }, [pedidos, period, estadoFilter]);
 
   const filteredAnuncios = useMemo(() => {
     if (period === "all") return anuncios;
@@ -86,8 +109,13 @@ export default function Dashboard() {
   const qtdPrioridade = filtered.filter((p) => p.cliente_cobrado && !p.pedido_pago && !p.pedido_perdido).length;
   const totalInvestido = filteredAnuncios.reduce((s, a) => s + Number(a.valor_investido), 0);
   const faturamentoPagos = pagos.reduce((s, p) => s + Number(p.valor), 0);
-  const lucroPagos = faturamentoPagos - totalInvestido - (perdidosFive.length * FRETE_FIVE);
+  const gastoFrete = perdidosFive.length * FRETE_FIVE;
+  const lucroPagos = faturamentoPagos - totalInvestido - gastoFrete;
   const cpaMedio = qtdPedidos > 0 ? totalInvestido / qtdPedidos : 0;
+
+  // Platform counts
+  const qtdFive = filtered.filter((p) => p.plataforma === "Five").length;
+  const qtdKeed = filtered.filter((p) => p.plataforma === "Keed").length;
 
   // CPA do dia
   const today = format(new Date(), "yyyy-MM-dd");
@@ -146,6 +174,18 @@ export default function Dashboard() {
     ].filter((d) => d.value > 0);
   }, [filtered, qtdPagos]);
 
+  // State pie (percentage)
+  const statePieData = useMemo(() => {
+    const map = new Map<string, number>();
+    filtered.forEach((p) => {
+      const uf = p.estado || "N/D";
+      map.set(uf, (map.get(uf) || 0) + 1);
+    });
+    return Array.from(map.entries())
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [filtered]);
+
   // State bar
   const stateData = useMemo(() => {
     const map = new Map<string, number>();
@@ -166,12 +206,24 @@ export default function Dashboard() {
           <LayoutDashboard className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Dashboard</h1>
         </div>
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {periodOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <Select value={estadoFilter} onValueChange={setEstadoFilter}>
+            <SelectTrigger className="w-40">
+              <MapPin className="h-4 w-4 mr-1" />
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os Estados</SelectItem>
+              {allEstados.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {periodOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Metric Cards Row 1 */}
@@ -181,12 +233,15 @@ export default function Dashboard() {
         <MetricCard title="Faturamento Pagos" icon={DollarSign} value={`R$ ${faturamentoPagos.toFixed(2)}`} className="text-primary" />
         <MetricCard title="Agendado (s/ Pagos)" icon={Package} value={`R$ ${valorAgendadoSemPagos.toFixed(2)}`} />
         <MetricCard title="Investimento Anúncios" icon={Megaphone} value={`R$ ${totalInvestido.toFixed(2)}`} className="text-destructive" />
+        <MetricCard title="Gasto com Frete" icon={Truck} value={`R$ ${gastoFrete.toFixed(2)}`} subtitle={`${perdidosFive.length} perdidos Five`} className="text-destructive" />
       </div>
 
       {/* Metric Cards Row 2 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         <MetricCard title="Pedidos Feitos" icon={Package} value={String(qtdPedidos)} />
         <MetricCard title="Pedidos Pagos" icon={TrendingUp} value={String(qtdPagos)} className="text-primary" />
+        <MetricCard title="Pedidos Five" icon={Package} value={String(qtdFive)} />
+        <MetricCard title="Pedidos Keed" icon={Package} value={String(qtdKeed)} />
         <MetricCard title="Aguardando Pgto" icon={Truck} value={String(qtdAguardandoPgto)} />
         <MetricCard title="Em Prioridade" icon={AlertTriangle} value={String(qtdPrioridade)} />
         <MetricCard title="CPA Médio" icon={Target} value={`R$ ${cpaMedio.toFixed(2)}`} />
@@ -246,7 +301,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Charts Row 2: Pie + State Bar */}
+      {/* Charts Row 2: Status Pie + State Pie */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader><CardTitle className="text-base">Status dos Pedidos</CardTitle></CardHeader>
@@ -264,16 +319,33 @@ export default function Dashboard() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="text-base">Pedidos por Estado</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">% por Estado</CardTitle></CardHeader>
           <CardContent>
-            {stateData.length === 0 ? <p className="text-sm text-muted-foreground text-center py-10">Sem dados</p> : (
-              <ChartContainer config={stateBarConfig} className="h-[300px] w-full">
-                <BarChart data={stateData} layout="vertical"><CartesianGrid strokeDasharray="3 3" className="stroke-border" /><XAxis type="number" className="text-xs" /><YAxis dataKey="estado" type="category" className="text-xs" width={50} /><ChartTooltip content={<ChartTooltipContent />} /><Bar dataKey="count" fill="var(--color-count)" radius={[0, 4, 4, 0]} /></BarChart>
+            {statePieData.length === 0 ? <p className="text-sm text-muted-foreground text-center py-10">Sem dados</p> : (
+              <ChartContainer config={statePieConfig} className="h-[300px] w-full">
+                <PieChart>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Pie data={statePieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
+                    {statePieData.map((_, i) => <Cell key={i} fill={STATE_PIE_COLORS[i % STATE_PIE_COLORS.length]} />)}
+                  </Pie>
+                </PieChart>
               </ChartContainer>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Chart: State Bar */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Pedidos por Estado</CardTitle></CardHeader>
+        <CardContent>
+          {stateData.length === 0 ? <p className="text-sm text-muted-foreground text-center py-10">Sem dados</p> : (
+            <ChartContainer config={stateBarConfig} className="h-[300px] w-full">
+              <BarChart data={stateData} layout="vertical"><CartesianGrid strokeDasharray="3 3" className="stroke-border" /><XAxis type="number" className="text-xs" /><YAxis dataKey="estado" type="category" className="text-xs" width={50} /><ChartTooltip content={<ChartTooltipContent />} /><Bar dataKey="count" fill="var(--color-count)" radius={[0, 4, 4, 0]} /></BarChart>
+            </ChartContainer>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -21,7 +21,6 @@ export default function FaltaChamar() {
         .from("pedidos")
         .select("*")
         .eq("user_id", user.id)
-        .eq("pedido_chegou", true)
         .eq("ja_foi_chamado", false)
         .eq("pedido_perdido", false)
         .order("data", { ascending: false });
