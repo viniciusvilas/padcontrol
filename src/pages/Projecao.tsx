@@ -26,7 +26,12 @@ const roiChartConfig: ChartConfig = {
 };
 
 const fluxoChartConfig: ChartConfig = {
-  pagamentos: { label: "Pagamentos", color: "hsl(var(--primary))" },
+  valorPagamentos: { label: "Pagamentos (R$)", color: "hsl(var(--primary))" },
+};
+
+const acumuladoChartConfig: ChartConfig = {
+  gastoAcumulado: { label: "Gasto Acumulado", color: "hsl(var(--destructive))" },
+  receitaAcumulada: { label: "Receita Acumulada", color: "hsl(var(--chart-2))" },
 };
 
 export default function Projecao() {
@@ -155,28 +160,42 @@ export default function Projecao() {
     ];
   }, [simulacao]);
 
-  // --- Fluxo de caixa diário (12 dias para receber) ---
+  // --- Fluxo de caixa diário em R$ (12 dias para receber) + acumulado ---
   const fluxoCaixaData = useMemo(() => {
-    if (!simulacao || simDias <= 0) return [];
+    if (!simulacao || !historico || simDias <= 0) return [];
+    const invDia = Number(investDiario) || 0;
     const pedidosPorDia = simulacao.pedidosPagos / simDias;
+    const ticketMedio = historico.ticketMedioPagos;
     const totalDias = simDias + 12;
-    const map: Record<string, number> = {};
 
+    // Build payment map: day index -> valor R$
+    const pagamentosMap: Record<number, number> = {};
     for (let d = 0; d < simDias; d++) {
       const diaPagamento = d + 12;
-      const diaLabel = format(addDays(hoje, diaPagamento), "dd/MM");
-      map[diaLabel] = (map[diaLabel] || 0) + pedidosPorDia;
+      pagamentosMap[diaPagamento] = (pagamentosMap[diaPagamento] || 0) + pedidosPorDia * ticketMedio;
     }
 
-    const result: { dia: string; pagamentos: number }[] = [];
-    for (let d = 12; d < totalDias; d++) {
-      const label = format(addDays(hoje, d), "dd/MM");
-      if (map[label]) {
-        result.push({ dia: label, pagamentos: Math.round(map[label] * 100) / 100 });
+    let gastoAcum = 0;
+    let receitaAcum = 0;
+    const result: { dia: string; valorPagamentos: number; gastoAcumulado: number; receitaAcumulada: number }[] = [];
+
+    for (let d = 0; d < totalDias; d++) {
+      // Gasto acumulado: investimento diário apenas nos dias de investimento
+      if (d < simDias) {
+        gastoAcum += invDia;
       }
+      const valorDia = pagamentosMap[d] || 0;
+      receitaAcum += valorDia;
+
+      result.push({
+        dia: format(addDays(hoje, d), "dd/MM"),
+        valorPagamentos: Math.round(valorDia * 100) / 100,
+        gastoAcumulado: Math.round(gastoAcum * 100) / 100,
+        receitaAcumulada: Math.round(receitaAcum * 100) / 100,
+      });
     }
     return result;
-  }, [simulacao, simDias, hoje]);
+  }, [simulacao, historico, simDias, hoje, investDiario]);
 
   const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -383,25 +402,48 @@ export default function Projecao() {
                 </Card>
 
                 {fluxoCaixaData.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <CalendarDays className="h-4 w-4" />
-                        Fluxo de Caixa — Pagamentos por dia (ciclo de 12 dias)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ChartContainer config={fluxoChartConfig} className="h-[300px] w-full">
-                        <BarChart data={fluxoCaixaData}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                          <XAxis dataKey="dia" className="text-xs" angle={-45} textAnchor="end" height={50} />
-                          <YAxis className="text-xs" />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <Bar dataKey="pagamentos" radius={[4, 4, 0, 0]} fill="hsl(var(--chart-2))" />
-                        </BarChart>
-                      </ChartContainer>
-                    </CardContent>
-                  </Card>
+                  <>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <CalendarDays className="h-4 w-4" />
+                          Pagamentos em R$ por dia (ciclo de 12 dias)
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ChartContainer config={fluxoChartConfig} className="h-[300px] w-full">
+                          <BarChart data={fluxoCaixaData}>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                            <XAxis dataKey="dia" className="text-xs" angle={-45} textAnchor="end" height={50} />
+                            <YAxis className="text-xs" />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Bar dataKey="valorPagamentos" radius={[4, 4, 0, 0]} fill="hsl(var(--primary))" />
+                          </BarChart>
+                        </ChartContainer>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <DollarSign className="h-4 w-4" />
+                          Acumulado — Gasto vs Receita
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ChartContainer config={acumuladoChartConfig} className="h-[300px] w-full">
+                          <BarChart data={fluxoCaixaData}>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                            <XAxis dataKey="dia" className="text-xs" angle={-45} textAnchor="end" height={50} />
+                            <YAxis className="text-xs" />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Bar dataKey="gastoAcumulado" radius={[4, 4, 0, 0]} fill="hsl(var(--destructive))" />
+                            <Bar dataKey="receitaAcumulada" radius={[4, 4, 0, 0]} fill="hsl(var(--chart-2))" />
+                          </BarChart>
+                        </ChartContainer>
+                      </CardContent>
+                    </Card>
+                  </>
                 )}
               </>
             ) : (
