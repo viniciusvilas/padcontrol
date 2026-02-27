@@ -35,7 +35,7 @@ export default function Install() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="flex items-center justify-center p-4">
       <Card className="max-w-lg w-full">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Instalar App</CardTitle>
