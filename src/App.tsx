@@ -17,6 +17,7 @@ import Anuncios from "./pages/Anuncios";
 import Dashboard from "./pages/Dashboard";
 import Projecao from "./pages/Projecao";
 import Nivel from "./pages/Nivel";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
+            <Route path="/install" element={<Install />} />
             <Route element={<ProtectedRoutes />}>
               <Route path="/" element={<Pedidos />} />
               <Route path="/prestes-a-chegar" element={<PrestesAChegar />} />
