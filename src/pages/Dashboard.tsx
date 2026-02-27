@@ -126,8 +126,8 @@ export default function Dashboard() {
 
   // Inadimplência
   const now = new Date();
-  const elegiveisCobranca = filtered.filter((p) => !p.pedido_pago && !p.pedido_perdido && differenceInCalendarDays(now, parseISO(p.data)) > 7);
-  const taxaInadimplencia = qtdPedidos > 0 ? ((elegiveisCobranca.length / qtdPedidos) * 100).toFixed(1) : "0";
+  const entreguesSemPgto = filtered.filter((p) => p.pedido_chegou && !p.pedido_pago && !p.pedido_perdido && p.data_entrega && differenceInCalendarDays(now, parseISO(p.data_entrega)) > 7);
+  const taxaInadimplencia = qtdEntregues > 0 ? ((entreguesSemPgto.length / qtdEntregues) * 100).toFixed(1) : "0";
 
   // ROI
   const roiPago = totalInvestido > 0 ? ((lucroPagos / totalInvestido) * 100).toFixed(1) : "0";
@@ -264,7 +264,7 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground">{pedidosHoje} pedidos hoje</p>
           </CardContent>
         </Card>
-        <MetricCard title="Inadimplência" icon={AlertTriangle} value={`${taxaInadimplencia}%`} subtitle={`${elegiveisCobranca.length} pedidos +7d`} />
+        <MetricCard title="Inadimplência" icon={AlertTriangle} value={`${taxaInadimplencia}%`} subtitle={`${entreguesSemPgto.length} entregues +7d s/ pgto`} />
         <MetricCard title="ROI vs Pago" icon={Percent} value={`${roiPago}%`} />
         <MetricCard title="ROI vs Agendado" icon={Percent} value={`${roiAgendado}%`} />
       </div>
