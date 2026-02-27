@@ -104,6 +104,7 @@ export default function Dashboard() {
   const valorAgendadoSemPagos = filtered.filter((p) => !p.pedido_pago).reduce((s, p) => s + Number(p.valor), 0);
   const qtdPedidos = filtered.length;
   const qtdPagos = pagos.length;
+  const qtdEntregues = filtered.filter((p) => p.pedido_chegou).length;
   const qtdAguardandoPgto = filtered.filter((p) => p.pedido_chegou && !p.pedido_pago && !p.pedido_perdido).length;
   const qtdPrioridade = filtered.filter((p) => p.cliente_cobrado && !p.pedido_pago && !p.pedido_perdido).length;
   const totalInvestido = filteredAnuncios.reduce((s, a) => s + Number(a.valor_investido), 0);
@@ -241,6 +242,7 @@ export default function Dashboard() {
         <MetricCard title="Pedidos Feitos" icon={Package} value={String(qtdPedidos)} />
         <MetricCard title="Pedidos Pagos" icon={TrendingUp} value={String(qtdPagos)} className="text-primary" />
         <MetricCard title="Pedidos Five" icon={Package} value={String(qtdFive)} />
+        <MetricCard title="Pedidos Entregues" icon={Truck} value={String(qtdEntregues)} className="text-primary" />
         <MetricCard title="Pedidos Keed" icon={Package} value={String(qtdKeed)} />
         <MetricCard title="Aguardando Pgto" icon={Truck} value={String(qtdAguardandoPgto)} />
         <MetricCard title="Em Prioridade" icon={AlertTriangle} value={String(qtdPrioridade)} />
