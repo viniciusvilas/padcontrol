@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { TrendingUp, Calculator, DollarSign, Package, Percent, Megaphone, CalendarDays } from "lucide-react";
+import { TrendingUp, Calculator, DollarSign, Package, Percent, Megaphone, CalendarDays, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +17,17 @@ import {
   ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig,
 } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+
+// Mulberry32 seeded PRNG
+function mulberry32(seed: number) {
+  let s = seed | 0;
+  return () => {
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 const FRETE_FIVE = 35;
 
@@ -44,6 +56,7 @@ export default function Projecao() {
   const [simPeriodoTipo, setSimPeriodoTipo] = useState<"dias" | "semanas" | "meses">("dias");
   const [simPeriodoQtd, setSimPeriodoQtd] = useState("30");
   const [inadimplenciaSim, setInadimplenciaSim] = useState(20);
+  const [cenarioSeed, setCenarioSeed] = useState(0);
 
   // --- Queries ---
   const { data: pedidos = [] } = useQuery({
@@ -164,15 +177,34 @@ export default function Projecao() {
   const fluxoCaixaData = useMemo(() => {
     if (!simulacao || !historico || simDias <= 0) return [];
     const invDia = Number(investDiario) || 0;
-    const pedidosPorDia = simulacao.pedidosPagos / simDias;
     const ticketMedio = historico.ticketMedioPagos;
     const totalDias = simDias + 12;
+    const totalPedidosPagos = simulacao.pedidosPagos;
+
+    // Distribute pedidosPagos randomly across simDias using seeded PRNG
+    const seedValue = simDias * 1000 + totalPedidosPagos * 7 + invDia * 13 + inadimplenciaSim * 31 + cenarioSeed * 97;
+    const rand = mulberry32(seedValue);
+
+    // Generate random weights and distribute integer pedidos
+    const weights = Array.from({ length: simDias }, () => rand() + 0.1);
+    const weightSum = weights.reduce((a, b) => a + b, 0);
+    const rawDistrib = weights.map((w) => (w / weightSum) * totalPedidosPagos);
+
+    // Floor and distribute remainder
+    const pedidosPorDiaArr = rawDistrib.map((v) => Math.floor(v));
+    let remainder = totalPedidosPagos - pedidosPorDiaArr.reduce((a, b) => a + b, 0);
+    // Distribute remainder to days with highest fractional parts
+    const fractions = rawDistrib.map((v, i) => ({ i, frac: v - Math.floor(v) }));
+    fractions.sort((a, b) => b.frac - a.frac);
+    for (let k = 0; k < remainder && k < fractions.length; k++) {
+      pedidosPorDiaArr[fractions[k].i]++;
+    }
 
     // Build payment map: day index -> valor R$
     const pagamentosMap: Record<number, number> = {};
     for (let d = 0; d < simDias; d++) {
       const diaPagamento = d + 12;
-      pagamentosMap[diaPagamento] = (pagamentosMap[diaPagamento] || 0) + pedidosPorDia * ticketMedio;
+      pagamentosMap[diaPagamento] = (pagamentosMap[diaPagamento] || 0) + pedidosPorDiaArr[d] * ticketMedio;
     }
 
     let gastoAcum = 0;
@@ -180,7 +212,6 @@ export default function Projecao() {
     const result: { dia: string; valorPagamentos: number; gastoAcumulado: number; receitaAcumulada: number }[] = [];
 
     for (let d = 0; d < totalDias; d++) {
-      // Gasto acumulado: investimento diário apenas nos dias de investimento
       if (d < simDias) {
         gastoAcum += invDia;
       }
@@ -195,7 +226,7 @@ export default function Projecao() {
       });
     }
     return result;
-  }, [simulacao, historico, simDias, hoje, investDiario]);
+  }, [simulacao, historico, simDias, hoje, investDiario, inadimplenciaSim, cenarioSeed]);
 
   const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -403,6 +434,17 @@ export default function Projecao() {
 
                 {fluxoCaixaData.length > 0 && (
                   <>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCenarioSeed((s) => s + 1)}
+                        className="gap-2"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        Novo Cenário
+                      </Button>
+                    </div>
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-base flex items-center gap-2">
