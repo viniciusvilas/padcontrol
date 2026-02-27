@@ -75,6 +75,7 @@ const defaultForm = {
   cliente_cobrado: false,
   pedido_pago: false,
   pedido_perdido: false,
+  data_entrega: "",
 };
 
 export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido }: Props) {
@@ -105,6 +106,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
         cliente_cobrado: pedido.cliente_cobrado,
         pedido_pago: pedido.pedido_pago,
         pedido_perdido: pedido.pedido_perdido,
+        data_entrega: pedido.data_entrega || "",
       });
     } else {
       setForm(defaultForm);
@@ -130,6 +132,9 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
         const d = key === "data" ? value : prev.data;
         const p = key === "prazo" ? value : prev.prazo;
         next.previsao_entrega = calcPrevisao(d, p);
+      }
+      if (key === "pedido_chegou" && value && !prev.data_entrega) {
+        next.data_entrega = new Date().toISOString().split('T')[0];
       }
       return next;
     });
@@ -165,7 +170,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
         cliente_cobrado: form.cliente_cobrado,
         pedido_pago: form.pedido_pago,
         pedido_perdido: form.pedido_perdido,
-        data_entrega: form.pedido_chegou ? (form as any).data_entrega || new Date().toISOString().split('T')[0] : null,
+        data_entrega: form.pedido_chegou ? (form.data_entrega || new Date().toISOString().split('T')[0]) : null,
       };
 
       if (isEdit && pedido) {
@@ -320,6 +325,12 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Data de Entrega */}
+          <div className="space-y-1.5">
+            <Label htmlFor="data_entrega">Data de Entrega</Label>
+            <Input id="data_entrega" type="date" value={form.data_entrega} onChange={(e) => set("data_entrega", e.target.value)} />
           </div>
 
           {/* Observações */}
