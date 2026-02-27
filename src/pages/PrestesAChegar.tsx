@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Pencil } from "lucide-react";
+import { Clock, Pencil, PackageCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { toast } from "sonner";
 import PedidoFormDialog from "@/components/PedidoFormDialog";
 import type { Tables } from "@/integrations/supabase/types";
 import { differenceInCalendarDays, parseISO } from "date-fns";
@@ -44,6 +45,12 @@ export default function PrestesAChegar() {
     if (dias < 0) return <Badge variant="outline" className="bg-destructive/15 text-destructive border-destructive/20">Atrasado {Math.abs(dias)}d</Badge>;
     if (dias === 0) return <Badge variant="outline" className="bg-amber-500/15 text-amber-700 border-amber-200">Hoje</Badge>;
     return <Badge variant="outline" className="bg-blue-500/15 text-blue-700 border-blue-200">{dias}d restante{dias > 1 ? "s" : ""}</Badge>;
+  };
+
+  const marcarChegou = async (id: string) => {
+    const { error } = await supabase.from("pedidos").update({ pedido_chegou: true }).eq("id", id);
+    if (error) toast.error("Erro ao atualizar");
+    else { toast.success("Marcado como chegou!"); refetch(); }
   };
 
   return (
@@ -86,7 +93,10 @@ export default function PrestesAChegar() {
                   <TableCell className="text-xs">{p.rastreio || "—"}</TableCell>
                   <TableCell>{p.local_entrega || "—"}</TableCell>
                   <TableCell>{p.estado || "—"}</TableCell>
-                  <TableCell>
+                  <TableCell className="flex items-center gap-1">
+                    <Button size="sm" variant="outline" onClick={() => marcarChegou(p.id)} className="gap-1">
+                      <PackageCheck className="h-3.5 w-3.5" /> Chegou
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditPedido(p); setFormOpen(true); }}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
