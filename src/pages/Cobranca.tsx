@@ -58,6 +58,7 @@ export default function Cobranca() {
         <TableHeader>
           <TableRow>
             <TableHead>Data</TableHead>
+            <TableHead>Entrega</TableHead>
             <TableHead>Cliente</TableHead>
             <TableHead>Telefone</TableHead>
             <TableHead>Produto</TableHead>
@@ -68,13 +69,14 @@ export default function Cobranca() {
         </TableHeader>
         <TableBody>
           {isLoading ? (
-            <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+            <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
           ) : items.length === 0 ? (
-            <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum pedido</TableCell></TableRow>
+            <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum pedido</TableCell></TableRow>
           ) : (
             items.map((p) => (
               <TableRow key={p.id}>
                 <TableCell className="whitespace-nowrap">{p.data}</TableCell>
+                <TableCell className="whitespace-nowrap">{p.data_entrega || "—"}</TableCell>
                 <TableCell className="font-medium">{p.cliente}</TableCell>
                 <TableCell>{p.telefone || "—"}</TableCell>
                 <TableCell>{p.produto}</TableCell>

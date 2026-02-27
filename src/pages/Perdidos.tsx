@@ -47,6 +47,7 @@ export default function Perdidos() {
           <TableHeader>
             <TableRow>
               <TableHead>Data</TableHead>
+              <TableHead>Entrega</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Produto</TableHead>
               <TableHead>Valor</TableHead>
@@ -56,13 +57,14 @@ export default function Perdidos() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
             ) : pedidos.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum pedido perdido 🎉</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum pedido perdido 🎉</TableCell></TableRow>
             ) : (
               pedidos.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell className="whitespace-nowrap">{p.data}</TableCell>
+                  <TableCell className="whitespace-nowrap">{p.data_entrega || "—"}</TableCell>
                   <TableCell className="font-medium">{p.cliente}</TableCell>
                   <TableCell>{p.produto}</TableCell>
                   <TableCell>R$ {Number(p.valor).toFixed(2)}</TableCell>
