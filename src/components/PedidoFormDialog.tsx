@@ -57,6 +57,7 @@ const defaultPrazo = "15";
 
 const defaultForm = {
   cliente: "",
+  cpf: "",
   valor: "",
   produto: "",
   telefone: "",
@@ -86,6 +87,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
     if (pedido) {
       setForm({
         cliente: pedido.cliente,
+        cpf: (pedido as any).cpf || "",
         valor: String(pedido.valor),
         produto: pedido.produto,
         telefone: pedido.telefone || "",
@@ -145,6 +147,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
     try {
       const payload = {
         cliente: form.cliente.trim(),
+        cpf: form.cpf.trim() || null,
         valor,
         produto: form.produto.trim(),
         telefone: form.telefone.trim() || null,
@@ -221,6 +224,12 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* CPF */}
+          <div className="space-y-1.5">
+            <Label htmlFor="cpf">CPF</Label>
+            <Input id="cpf" value={form.cpf} onChange={(e) => set("cpf", e.target.value)} placeholder="000.000.000-00" />
           </div>
 
           {/* Telefone */}

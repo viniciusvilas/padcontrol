@@ -131,6 +131,7 @@ export default function Pedidos() {
             <TableRow>
               <TableHead>Data</TableHead>
               <TableHead>Cliente</TableHead>
+              <TableHead>CPF</TableHead>
               <TableHead>Telefone</TableHead>
               <TableHead>Produto</TableHead>
               <TableHead>Valor</TableHead>
@@ -151,14 +152,15 @@ export default function Pedidos() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={18} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={19} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={18} className="text-center py-8 text-muted-foreground">Nenhum pedido encontrado</TableCell></TableRow>
+              <TableRow><TableCell colSpan={19} className="text-center py-8 text-muted-foreground">Nenhum pedido encontrado</TableCell></TableRow>
             ) : (
               filtered.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell className="whitespace-nowrap">{p.data}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap">{p.cliente}</TableCell>
+                  <TableCell className="whitespace-nowrap">{(p as any).cpf || "—"}</TableCell>
                   <TableCell className="whitespace-nowrap">{p.telefone || "—"}</TableCell>
                   <TableCell>{p.produto}</TableCell>
                   <TableCell className="whitespace-nowrap">R$ {Number(p.valor).toFixed(2)}</TableCell>
