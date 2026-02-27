@@ -64,6 +64,7 @@ export default function Prioridade() {
             <TableRow>
               <TableHead>Dias</TableHead>
               <TableHead>Data</TableHead>
+              <TableHead>Entrega</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Telefone</TableHead>
               <TableHead>Produto</TableHead>
@@ -73,9 +74,9 @@ export default function Prioridade() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
             ) : pedidos.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum pedido pendente de prioridade</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum pedido pendente de prioridade</TableCell></TableRow>
             ) : (
               pedidos.map((p) => {
                 const dias = diasDesdeEntrega(p);
@@ -87,6 +88,7 @@ export default function Prioridade() {
                       </Badge>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">{p.data}</TableCell>
+                    <TableCell className="whitespace-nowrap">{p.data_entrega || "—"}</TableCell>
                     <TableCell className="font-medium">{p.cliente}</TableCell>
                     <TableCell>{p.telefone || "—"}</TableCell>
                     <TableCell>{p.produto}</TableCell>
