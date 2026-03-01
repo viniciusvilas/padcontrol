@@ -215,10 +215,13 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
           {/* Produto */}
           <div className="space-y-1.5">
             <Label>Produto *</Label>
-            <Select value={form.produto} onValueChange={(v) => {
-              set("produto", v);
+            <Select value={form.produto || undefined} onValueChange={(v) => {
               const found = PRODUTO_OPTIONS.find((p) => p.value === v);
-              if (found) set("valor", String(found.preco));
+              setForm((prev) => ({
+                ...prev,
+                produto: v,
+                valor: found ? String(found.preco) : prev.valor,
+              }));
             }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o produto" />
