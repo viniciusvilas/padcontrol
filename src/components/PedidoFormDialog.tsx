@@ -13,6 +13,22 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Pedido = Tables<"pedidos">;
 
+const formatCPF = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  return digits
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+};
+
+const generateRastreioKeed = (cpf: string, plataforma: string) => {
+  if (plataforma !== "Keed") return "";
+  const digits = cpf.replace(/\D/g, "");
+  if (digits.length !== 11) return "";
+  const formatted = formatCPF(cpf);
+  return `https://app.arcologistica.com.br/tracking?type=document&query=${formatted}`;
+};
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -128,6 +144,10 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
   const set = (key: string, value: any) => {
     setForm((prev) => {
       const next = { ...prev, [key]: value };
+      // CPF formatting
+      if (key === "cpf") {
+        next.cpf = formatCPF(value);
+      }
       if (key === "data" || key === "prazo") {
         const d = key === "data" ? value : prev.data;
         const p = key === "prazo" ? value : prev.prazo;
@@ -135,6 +155,15 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
       }
       if (key === "pedido_chegou" && value && !prev.data_entrega) {
         next.data_entrega = new Date().toISOString().split('T')[0];
+      }
+      // Auto-generate rastreio for Keed
+      if (key === "cpf" || key === "plataforma") {
+        const cpf = key === "cpf" ? next.cpf : prev.cpf;
+        const plat = key === "plataforma" ? value : prev.plataforma;
+        const autoRastreio = generateRastreioKeed(cpf, plat);
+        if (plat === "Keed") {
+          next.rastreio = autoRastreio;
+        }
       }
       return next;
     });
@@ -311,7 +340,17 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
           {/* Rastreio */}
           <div className="space-y-1.5 sm:col-span-2">
             <Label htmlFor="rastreio">Código de Rastreio</Label>
-            <Input id="rastreio" value={form.rastreio} onChange={(e) => set("rastreio", e.target.value)} placeholder="Código de rastreio" />
+            <Input
+              id="rastreio"
+              value={form.rastreio}
+              onChange={(e) => set("rastreio", e.target.value)}
+              placeholder="Código de rastreio"
+              readOnly={form.plataforma === "Keed"}
+              className={form.plataforma === "Keed" ? "bg-muted" : ""}
+            />
+            {form.plataforma === "Keed" && (
+              <p className="text-xs text-muted-foreground">Gerado automaticamente pelo CPF</p>
+            )}
           </div>
 
           {/* Estado */}
