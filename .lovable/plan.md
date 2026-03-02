@@ -1,30 +1,39 @@
 
 
-## Transformar em app instalavel
+## Plan: Auto-generate tracking link for Keed orders + CPF formatting
 
-Sim, e com pouco trabalho. Existem duas abordagens:
+### What will be done
 
-### Opção 1: App Instalavel via navegador (PWA) — Recomendado
-- Funciona em **celular e PC**
-- O usuario acessa o site e clica em "Instalar" no navegador
-- Fica com icone na tela inicial / area de trabalho, abre sem barra do navegador
-- Funciona offline para telas ja carregadas
-- **Nenhuma loja de apps necessaria** (ideal para poucas pessoas)
-- Trabalho: **pequeno** — configurar manifest, icones e service worker
+1. **CPF auto-formatting** — Add a mask function that formats CPF input as `xxx.xxx.xxx-xx` automatically as the user types. Apply this in:
+   - `PedidoFormDialog.tsx` (CPF input field)
+   - Import logic (`importPedidos.ts`) to normalize imported CPFs
 
-### Opção 2: App nativo (Capacitor)
-- App real publicado na App Store / Google Play
-- Acesso total a recursos do celular (notificacoes push, camera, etc.)
-- Requer Xcode (iOS) e Android Studio (Android) na sua maquina
-- Trabalho: **medio a alto** — setup local, build, publicacao nas lojas
+2. **Auto-generate rastreio for Keed orders** — When the platform is "Keed" and a CPF is present, automatically set the `rastreio` field to `https://app.arcologistica.com.br/tracking?type=document&query={cpf_formatado}`. This happens:
+   - In the form's `set` function: whenever `cpf` or `plataforma` changes, recalculate rastreio if platform is Keed
+   - On submit (`handleSubmit`): ensure rastreio is set correctly before saving
+   - If CPF is empty and platform is Keed, rastreio stays empty
 
-### Recomendacao
+3. **Display rastreio as clickable link** — In `Pedidos.tsx` table, if rastreio starts with `http`, render it as a clickable link (opening in new tab) instead of plain text. Same treatment in other pages that show rastreio.
 
-Para **poucas pessoas** e sem necessidade de loja de apps, a **Opção 1 (PWA)** e a melhor escolha. O usuario so precisa acessar o link e instalar pelo navegador. Funciona tanto no celular quanto no PC.
+### Technical details
 
-### Implementacao (PWA)
-1. Instalar `vite-plugin-pwa` e configurar no `vite.config.ts`
-2. Criar manifest com nome, icones e cores do app
-3. Adicionar meta tags mobile no `index.html`
-4. Criar pagina `/install` com instrucoes para o usuario instalar
+**CPF mask utility** (in `set` function or inline):
+```typescript
+const formatCPF = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  return digits
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+};
+```
+
+**Rastreio auto-generation logic** in `PedidoFormDialog.tsx` `set` function:
+- When `cpf` or `plataforma` changes, if `plataforma === "Keed"` and CPF has 11 digits, set `rastreio` to the tracking URL with formatted CPF. If CPF is empty, clear rastreio.
+- When platform is "Five", don't auto-set rastreio (leave manual).
+
+**Files to modify:**
+- `src/components/PedidoFormDialog.tsx` — CPF mask + auto-rastreio logic
+- `src/pages/Pedidos.tsx` — Render rastreio as clickable link
+- `src/lib/importPedidos.ts` — Format CPF on import if present
 
