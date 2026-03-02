@@ -29,7 +29,7 @@ function mulberry32(seed: number) {
   };
 }
 
-const FRETE_FIVE = 35;
+const FRETE_FIVE = 35.5;
 
 const roiChartConfig: ChartConfig = {
   faturamento: { label: "Faturamento", color: "hsl(var(--primary))" },

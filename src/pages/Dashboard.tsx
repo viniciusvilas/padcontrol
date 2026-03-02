@@ -17,7 +17,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell,
 } from "recharts";
 
-const FRETE_FIVE = 35;
+const FRETE_FIVE = 35.5;
 
 const periodOptions = [
   { value: "7", label: "Últimos 7 dias" },
