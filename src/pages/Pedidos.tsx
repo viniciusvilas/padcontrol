@@ -192,9 +192,14 @@ export default function Pedidos() {
                   <TableCell>{p.local_entrega || "—"}</TableCell>
                   <TableCell className="whitespace-nowrap text-xs">
                     {p.rastreio ? (
-                      p.rastreio.startsWith("http") ? (
-                        <a href={p.rastreio} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">Rastrear</a>
-                      ) : p.rastreio
+                      <span className="flex items-center gap-1">
+                        {p.rastreio.startsWith("http") ? (
+                          <a href={p.rastreio} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">Rastrear</a>
+                        ) : p.rastreio}
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(p.rastreio!); toast.success("Link copiado!"); }}>
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </span>
                     ) : "—"}
                   </TableCell>
                   <TableCell><Checkbox checked={p.pedido_chegou} onCheckedChange={() => toggleField(p, "pedido_chegou")} /></TableCell>

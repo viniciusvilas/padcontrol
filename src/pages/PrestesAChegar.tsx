@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Pencil, PackageCheck } from "lucide-react";
+import { Clock, Pencil, PackageCheck, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -90,7 +90,18 @@ export default function PrestesAChegar() {
                   <TableCell className="font-medium">{p.cliente}</TableCell>
                   <TableCell>{p.telefone || "—"}</TableCell>
                   <TableCell>{p.produto}</TableCell>
-                  <TableCell className="text-xs">{p.rastreio || "—"}</TableCell>
+                  <TableCell className="whitespace-nowrap text-xs">
+                    {p.rastreio ? (
+                      <span className="flex items-center gap-1">
+                        {p.rastreio.startsWith("http") ? (
+                          <a href={p.rastreio} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">Rastrear</a>
+                        ) : p.rastreio}
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(p.rastreio!); toast.success("Link copiado!"); }}>
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </span>
+                    ) : "—"}
+                  </TableCell>
                   <TableCell>{p.local_entrega || "—"}</TableCell>
                   <TableCell>{p.estado || "—"}</TableCell>
                   <TableCell className="flex items-center gap-1">
