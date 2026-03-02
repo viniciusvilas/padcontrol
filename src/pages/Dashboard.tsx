@@ -120,7 +120,9 @@ export default function Dashboard() {
 
   // CPA do dia
   const today = format(new Date(), "yyyy-MM-dd");
-  const pedidosHoje = pedidos.filter((p) => p.data === today).length;
+  const pedidosHojeList = pedidos.filter((p) => p.data === today);
+  const pedidosHoje = pedidosHojeList.length;
+  const valorHoje = pedidosHojeList.reduce((s, p) => s + Number(p.valor), 0);
   const budgetDia = Number(cpaDiaBudget) || 0;
   const cpaDia = pedidosHoje > 0 ? budgetDia / pedidosHoje : 0;
 
@@ -250,7 +252,8 @@ export default function Dashboard() {
       </div>
 
       {/* CPA do Dia + Inadimplência + ROIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+        <MetricCard title="Valor Hoje" icon={DollarSign} value={`R$ ${valorHoje.toFixed(2)}`} subtitle={`${pedidosHoje} pedidos`} className="text-primary" />
         <Card>
           <CardHeader className="pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">CPA do Dia</CardTitle>
