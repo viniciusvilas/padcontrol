@@ -28,7 +28,7 @@ export default function Pagos() {
   });
 
   const totalValor = pedidos.reduce((s, p) => s + Number(p.valor), 0);
-  const totalFrete = pedidos.filter((p) => p.plataforma === "Five").length * 35;
+  const totalFrete = pedidos.filter((p) => p.plataforma === "Five").length * 35.5;
 
   return (
     <div>

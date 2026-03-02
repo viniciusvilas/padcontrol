@@ -16,7 +16,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Pedido = Tables<"pedidos">;
 
-const FRETE_FIVE = 35;
+const FRETE_FIVE = 35.5;
 
 const STATUS_OPTIONS = [
   { value: "todos", label: "Todos" },

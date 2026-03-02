@@ -45,8 +45,8 @@ const STATUS_OPTIONS = [
 ];
 
 const PRODUTO_OPTIONS = [
-  { value: "3+1", label: "3+1", preco: 170 },
-  { value: "5+1", label: "5+1", preco: 220 },
+  { value: "3+1", label: "3+1", preco: 163 },
+  { value: "5+1", label: "5+1", preco: 213 },
   { value: "12", label: "12", preco: 350 },
 ];
 
@@ -331,7 +331,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Five">Five (frete R$35)</SelectItem>
+                <SelectItem value="Five">Five (frete R$35,50)</SelectItem>
                 <SelectItem value="Keed">Keed (frete grátis)</SelectItem>
               </SelectContent>
             </Select>
