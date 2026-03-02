@@ -190,7 +190,13 @@ export default function Pedidos() {
                   <TableCell><Badge variant="outline" className={statusStyle(p.status)}>{p.status}</Badge></TableCell>
                   <TableCell>{p.estado || "—"}</TableCell>
                   <TableCell>{p.local_entrega || "—"}</TableCell>
-                  <TableCell className="whitespace-nowrap text-xs">{p.rastreio || "—"}</TableCell>
+                  <TableCell className="whitespace-nowrap text-xs">
+                    {p.rastreio ? (
+                      p.rastreio.startsWith("http") ? (
+                        <a href={p.rastreio} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">Rastrear</a>
+                      ) : p.rastreio
+                    ) : "—"}
+                  </TableCell>
                   <TableCell><Checkbox checked={p.pedido_chegou} onCheckedChange={() => toggleField(p, "pedido_chegou")} /></TableCell>
                   <TableCell><Checkbox checked={p.ja_foi_chamado} onCheckedChange={() => toggleField(p, "ja_foi_chamado")} /></TableCell>
                   <TableCell><Checkbox checked={p.cliente_cobrado} onCheckedChange={() => toggleField(p, "cliente_cobrado")} /></TableCell>

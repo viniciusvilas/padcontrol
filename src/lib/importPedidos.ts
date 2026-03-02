@@ -1,5 +1,14 @@
 import * as XLSX from "xlsx";
 
+const formatCPF = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length === 0) return "";
+  return digits
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+};
+
 export interface PedidoImportRow {
   cliente: string;
   valor: number;
@@ -15,6 +24,8 @@ export interface PedidoImportRow {
   status: string;
   pedido_pago: boolean;
   pedido_perdido: boolean;
+  cpf: string | null;
+  rastreio: string | null;
 }
 
 function parseDate(value: any): string | null {
@@ -108,6 +119,9 @@ export function parseSpreadsheet(file: File): Promise<PedidoImportRow[]> {
             row["GANHO_OU_PERDA"] || row["GANHO OU PERDA"] || null
           );
           
+          const rawCpf = row["CPF"] ? String(row["CPF"]).trim() : "";
+          const cpf = rawCpf ? formatCPF(rawCpf) : null;
+
           parsed.push({
             cliente,
             valor,
@@ -120,6 +134,10 @@ export function parseSpreadsheet(file: File): Promise<PedidoImportRow[]> {
             pedido_chegou: parseBool(row["JA_CHEGOU?"] || row["JA CHEGOU?"]),
             ja_foi_chamado: parseBool(row["JA_FOI_CHAMADO"] || row["JA FOI CHAMADO"]),
             cliente_cobrado: parseBool(row["JA_FOI_COBRADO"] || row["JA FOI COBRADO"]),
+            cpf,
+            rastreio: cpf && cpf.replace(/\D/g, "").length === 11
+              ? `https://app.arcologistica.com.br/tracking?type=document&query=${cpf}`
+              : null,
             ...statusInfo,
           });
         }
