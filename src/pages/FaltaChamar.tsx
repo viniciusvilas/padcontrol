@@ -66,8 +66,8 @@ export default function FaltaChamar() {
             ) : pedidos.length === 0 ? (
               <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Todos os clientes já foram chamados 🎉</TableCell></TableRow>
             ) : (
-              pedidos.map((p) => (
-                <TableRow key={p.id}>
+              pedidos.map((p, i) => (
+                <TableRow key={p.id} className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}>
                   <TableCell className="whitespace-nowrap">{p.data}</TableCell>
                   <TableCell className="font-medium">{p.cliente}</TableCell>
                   <TableCell>{p.telefone || "—"}</TableCell>

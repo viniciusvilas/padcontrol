@@ -156,8 +156,8 @@ export default function Pedidos() {
             ) : filtered.length === 0 ? (
               <TableRow><TableCell colSpan={19} className="text-center py-8 text-muted-foreground">Nenhum pedido encontrado</TableCell></TableRow>
             ) : (
-              filtered.map((p) => (
-                <TableRow key={p.id}>
+              filtered.map((p, i) => (
+                <TableRow key={p.id} className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}>
                   <TableCell className="whitespace-nowrap">{p.data}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap">{p.cliente}</TableCell>
                   <TableCell className="whitespace-nowrap">
