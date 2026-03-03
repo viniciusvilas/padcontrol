@@ -78,10 +78,10 @@ export default function Prioridade() {
             ) : pedidos.length === 0 ? (
               <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum pedido pendente de prioridade</TableCell></TableRow>
             ) : (
-              pedidos.map((p) => {
+              pedidos.map((p, i) => {
                 const dias = diasDesdeEntrega(p);
                 return (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}>
                     <TableCell>
                       <Badge variant="outline" className={dias > 30 ? "bg-destructive/15 text-destructive border-destructive/20" : dias > 15 ? "bg-amber-500/15 text-amber-700 border-amber-200" : "bg-muted text-muted-foreground"}>
                         {dias}d
