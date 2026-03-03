@@ -1,39 +1,23 @@
 
 
-## Plan: Auto-generate tracking link for Keed orders + CPF formatting
+## Linhas alternadas com tons de roxo nas tabelas de pedidos
 
-### What will be done
+### O que será feito
+Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
 
-1. **CPF auto-formatting** — Add a mask function that formats CPF input as `xxx.xxx.xxx-xx` automatically as the user types. Apply this in:
-   - `PedidoFormDialog.tsx` (CPF input field)
-   - Import logic (`importPedidos.ts`) to normalize imported CPFs
+### Abordagem
+A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
 
-2. **Auto-generate rastreio for Keed orders** — When the platform is "Keed" and a CPF is present, automatically set the `rastreio` field to `https://app.arcologistica.com.br/tracking?type=document&query={cpf_formatado}`. This happens:
-   - In the form's `set` function: whenever `cpf` or `plataforma` changes, recalculate rastreio if platform is Keed
-   - On submit (`handleSubmit`): ensure rastreio is set correctly before saving
-   - If CPF is empty and platform is Keed, rastreio stays empty
+1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
+2. **Perdidos.tsx**
+3. **Pagos.tsx**
+4. **Prioridade.tsx**
+5. **FaltaChamar.tsx**
+6. **PrestesAChegar.tsx**
 
-3. **Display rastreio as clickable link** — In `Pedidos.tsx` table, if rastreio starts with `http`, render it as a clickable link (opening in new tab) instead of plain text. Same treatment in other pages that show rastreio.
+### Classes CSS
+- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
+- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
 
-### Technical details
-
-**CPF mask utility** (in `set` function or inline):
-```typescript
-const formatCPF = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-  return digits
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-};
-```
-
-**Rastreio auto-generation logic** in `PedidoFormDialog.tsx` `set` function:
-- When `cpf` or `plataforma` changes, if `plataforma === "Keed"` and CPF has 11 digits, set `rastreio` to the tracking URL with formatted CPF. If CPF is empty, clear rastreio.
-- When platform is "Five", don't auto-set rastreio (leave manual).
-
-**Files to modify:**
-- `src/components/PedidoFormDialog.tsx` — CPF mask + auto-rastreio logic
-- `src/pages/Pedidos.tsx` — Render rastreio as clickable link
-- `src/lib/importPedidos.ts` — Format CPF on import if present
+Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
 
