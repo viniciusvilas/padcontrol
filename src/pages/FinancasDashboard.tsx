@@ -502,6 +502,30 @@ export default function FinancasDashboard() {
             <p className="text-xs text-muted-foreground">{pedidosPagos.length} vendas pagas</p>
           </CardContent>
         </Card>
+        <Link to="/financas/contas-a-pagar">
+          <Card className="hover:border-primary/30 transition-colors cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Contas a Vencer (mês)</CardTitle>
+              <Receipt className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-warning">R$ {billsMonthTotal.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">{billsMonth.length} conta{billsMonth.length !== 1 ? "s" : ""} pendente{billsMonth.length !== 1 ? "s" : ""}</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link to="/financas/contas-a-pagar">
+          <Card className="hover:border-primary/30 transition-colors cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Próximos 7 dias</CardTitle>
+              <CalendarClock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${billsNext7Total > 0 ? "text-destructive" : "text-muted-foreground"}`}>R$ {billsNext7Total.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">{billsNext7.length} conta{billsNext7.length !== 1 ? "s" : ""} a vencer</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Charts Row */}
