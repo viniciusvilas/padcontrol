@@ -41,8 +41,45 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_accounts: {
+        Row: {
+          balance: number
+          color: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          owner: string
+          type: Database["public"]["Enums"]["finance_account_type"]
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          color?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          owner?: string
+          type: Database["public"]["Enums"]["finance_account_type"]
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          color?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          owner?: string
+          type?: Database["public"]["Enums"]["finance_account_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       finance_bills: {
         Row: {
+          account_id: string | null
           amount: number
           category: string
           created_at: string
@@ -58,6 +95,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amount?: number
           category?: string
           created_at?: string
@@ -73,6 +111,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           category?: string
           created_at?: string
@@ -87,7 +126,15 @@ export type Database = {
           status?: Database["public"]["Enums"]["finance_bill_status"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "finance_bills_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       finance_budgets: {
         Row: {
@@ -148,6 +195,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      finance_envelopes: {
+        Row: {
+          account_id: string
+          allocated_amount: number
+          color: string
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          target_amount: number
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          allocated_amount?: number
+          color?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          target_amount?: number
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          allocated_amount?: number
+          color?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          target_amount?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_envelopes_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       finance_income_sources: {
         Row: {
@@ -217,6 +311,7 @@ export type Database = {
       }
       finance_transactions: {
         Row: {
+          account_id: string | null
           amount: number
           category: string
           created_at: string
@@ -230,6 +325,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amount?: number
           category?: string
           created_at?: string
@@ -243,6 +339,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           category?: string
           created_at?: string
@@ -255,7 +352,66 @@ export type Database = {
           type?: Database["public"]["Enums"]["finance_transaction_type"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "finance_transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_transfers: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          description: string
+          from_account_id: string
+          id: string
+          to_account_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          date?: string
+          description?: string
+          from_account_id: string
+          id?: string
+          to_account_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          description?: string
+          from_account_id?: string
+          id?: string
+          to_account_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_transfers_from_account_id_fkey"
+            columns: ["from_account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transfers_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       metas: {
         Row: {
@@ -406,6 +562,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      finance_account_type: "pj" | "pf"
       finance_bill_status: "pending" | "paid" | "overdue"
       finance_category_type: "income" | "expense" | "both"
       finance_recurrence_interval: "monthly" | "weekly" | "yearly"
@@ -537,6 +694,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      finance_account_type: ["pj", "pf"],
       finance_bill_status: ["pending", "paid", "overdue"],
       finance_category_type: ["income", "expense", "both"],
       finance_recurrence_interval: ["monthly", "weekly", "yearly"],

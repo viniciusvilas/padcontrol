@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinanceCategories } from "@/hooks/useFinanceCategories";
+import { useFinanceAccounts } from "@/hooks/useFinanceAccounts";
 import { format, parseISO, isBefore, startOfDay, startOfMonth, endOfMonth, subMonths, addMonths, addWeeks, addYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +27,7 @@ interface BillForm {
   is_recurring: boolean;
   recurrence_interval: string;
   notes: string;
+  account_id: string;
 }
 
 const emptyForm: BillForm = {
@@ -36,6 +38,7 @@ const emptyForm: BillForm = {
   is_recurring: false,
   recurrence_interval: "",
   notes: "",
+  account_id: "",
 };
 
 function buildMonthOptions() {
@@ -55,6 +58,7 @@ export default function FinancasContasPagar() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { filtered: expenseCategories } = useFinanceCategories("expense");
+  const { activeAccounts } = useFinanceAccounts();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<BillForm>(emptyForm);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
@@ -114,6 +118,7 @@ export default function FinancasContasPagar() {
         recurrence_interval: f.is_recurring && f.recurrence_interval ? f.recurrence_interval : null,
         notes: f.notes || null,
         status: "pending",
+        account_id: f.account_id || null,
       };
       if (f.id) {
         const { status, ...updatePayload } = payload;
@@ -189,6 +194,7 @@ export default function FinancasContasPagar() {
       is_recurring: bill.is_recurring,
       recurrence_interval: bill.recurrence_interval || "",
       notes: bill.notes || "",
+      account_id: bill.account_id || "",
     });
     setDialogOpen(true);
   };
@@ -329,6 +335,23 @@ export default function FinancasContasPagar() {
                       <span className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: c.color }} />
                         {c.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Conta</Label>
+              <Select value={form.account_id} onValueChange={(v) => setForm({ ...form, account_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhuma</SelectItem>
+                  {activeAccounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: a.color }} />
+                        {a.name}
                       </span>
                     </SelectItem>
                   ))}

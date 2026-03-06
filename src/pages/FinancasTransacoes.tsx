@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinanceCategories } from "@/hooks/useFinanceCategories";
+import { useFinanceAccounts } from "@/hooks/useFinanceAccounts";
 import { format, parseISO, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ interface TxForm {
   source: string;
   is_recurring: boolean;
   notes: string;
+  account_id: string;
 }
 
 const emptyForm: TxForm = {
@@ -38,6 +40,7 @@ const emptyForm: TxForm = {
   source: "",
   is_recurring: false,
   notes: "",
+  account_id: "",
 };
 
 const periodOptions = [
@@ -55,6 +58,7 @@ export default function FinancasTransacoes() {
   const { filtered: incomeCategories } = useFinanceCategories("income");
   const { filtered: expenseCategories } = useFinanceCategories("expense");
   const { categories: allCats } = useFinanceCategories();
+  const { activeAccounts, accounts: allAccounts } = useFinanceAccounts();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<TxForm>(emptyForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -114,7 +118,7 @@ export default function FinancasTransacoes() {
   // Save mutation
   const saveMutation = useMutation({
     mutationFn: async (f: TxForm) => {
-      const payload = {
+      const payload: any = {
         user_id: user!.id,
         date: f.date,
         description: f.description,
@@ -124,6 +128,7 @@ export default function FinancasTransacoes() {
         source: f.source,
         is_recurring: f.is_recurring,
         notes: f.notes || null,
+        account_id: f.account_id || null,
       };
       if (f.id) {
         const { error } = await supabase.from("finance_transactions").update(payload).eq("id", f.id);
@@ -170,6 +175,7 @@ export default function FinancasTransacoes() {
       source: tx.source || "",
       is_recurring: tx.is_recurring,
       notes: tx.notes || "",
+      account_id: tx.account_id || "",
     });
     setDialogOpen(true);
   };
@@ -426,9 +432,28 @@ export default function FinancasTransacoes() {
                 </Select>
               </div>
             </div>
-            <div>
-              <Label>Fonte</Label>
-              <Input value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="Ex: Pay After Delivery" />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Fonte</Label>
+                <Input value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="Ex: Pay After Delivery" />
+              </div>
+              <div>
+                <Label>Conta</Label>
+                <Select value={form.account_id} onValueChange={(v) => setForm({ ...form, account_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhuma</SelectItem>
+                    {activeAccounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: a.color }} />
+                          {a.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Checkbox checked={form.is_recurring} onCheckedChange={(v) => setForm({ ...form, is_recurring: !!v })} />
