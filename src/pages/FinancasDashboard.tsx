@@ -200,7 +200,21 @@ export default function FinancasDashboard() {
   const saldo = receitas - despesas;
   const patrimonio = investments.reduce((s: number, inv: any) => s + Number(inv.current_value), 0);
 
-  // Bar chart data (last 6 months)
+  // Budget alerts
+  const budgetAlerts = useMemo(() => {
+    return budgets.map((b: any) => {
+      const spent = transactions
+        .filter((t: any) => t.type === "expense" && t.category === b.category)
+        .reduce((s: number, t: any) => s + Number(t.amount), 0);
+      const limit = Number(b.monthly_limit);
+      const pct = limit > 0 ? (spent / limit) * 100 : 0;
+      return { category: b.category, limit, spent, pct, remaining: limit - spent };
+    }).sort((a: any, b: any) => b.pct - a.pct);
+  }, [budgets, transactions]);
+
+  const overspentCategories = budgetAlerts.filter((b: any) => b.pct >= 100);
+  const topBudgetAlerts = budgetAlerts.slice(0, 3);
+
   const barData = useMemo(() => {
     const months: { label: string; income: number; expense: number }[] = [];
     for (let i = 5; i >= 0; i--) {
