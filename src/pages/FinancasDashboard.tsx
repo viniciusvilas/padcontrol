@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Wallet, TrendingUp, TrendingDown, Scale, Landmark, AlertTriangle, ArrowLeftRight, Package, PieChart as PieChartIcon, Building2, Wallet2 } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Scale, Landmark, AlertTriangle, ArrowLeftRight, Package, PieChart as PieChartIcon, Building2, Wallet2, Receipt, CalendarClock } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -90,6 +90,25 @@ export default function FinancasDashboard() {
         .from("finance_bills").select("*")
         .eq("user_id", user!.id).eq("status", "pending")
         .order("due_date", { ascending: true }).limit(5);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Bills for current month (pending + overdue) for summary cards
+  const { data: billsMonth = [] } = useQuery({
+    queryKey: ["fin-bills-month-summary", user?.id],
+    queryFn: async () => {
+      const now = new Date();
+      const ms = format(startOfMonth(now), "yyyy-MM-dd");
+      const me = format(endOfMonth(now), "yyyy-MM-dd");
+      const { data, error } = await supabase
+        .from("finance_bills").select("*")
+        .eq("user_id", user!.id)
+        .in("status", ["pending", "overdue"])
+        .gte("due_date", ms)
+        .lte("due_date", me);
       if (error) throw error;
       return data;
     },
@@ -291,6 +310,20 @@ export default function FinancasDashboard() {
 
   const today = new Date();
 
+  // Bills summary: month total & next 7 days
+  const billsMonthTotal = billsMonth.reduce((s: number, b: any) => s + Number(b.amount), 0);
+  const billsNext7 = useMemo(() => {
+    const now = new Date();
+    const in7 = new Date();
+    in7.setDate(in7.getDate() + 7);
+    return billsMonth
+      .filter((b: any) => {
+        const d = parseISO(b.due_date);
+        return d >= now && d <= in7;
+      });
+  }, [billsMonth]);
+  const billsNext7Total = billsNext7.reduce((s: number, b: any) => s + Number(b.amount), 0);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -430,7 +463,7 @@ export default function FinancasDashboard() {
       )}
 
       {/* Metric cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">Receitas do mês</CardTitle>
@@ -469,6 +502,30 @@ export default function FinancasDashboard() {
             <p className="text-xs text-muted-foreground">{pedidosPagos.length} vendas pagas</p>
           </CardContent>
         </Card>
+        <Link to="/financas/contas-a-pagar">
+          <Card className="hover:border-primary/30 transition-colors cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Contas a Vencer (mês)</CardTitle>
+              <Receipt className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-warning">R$ {billsMonthTotal.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">{billsMonth.length} conta{billsMonth.length !== 1 ? "s" : ""} pendente{billsMonth.length !== 1 ? "s" : ""}</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link to="/financas/contas-a-pagar">
+          <Card className="hover:border-primary/30 transition-colors cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Próximos 7 dias</CardTitle>
+              <CalendarClock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${billsNext7Total > 0 ? "text-destructive" : "text-muted-foreground"}`}>R$ {billsNext7Total.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">{billsNext7.length} conta{billsNext7.length !== 1 ? "s" : ""} a vencer</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Charts Row */}
