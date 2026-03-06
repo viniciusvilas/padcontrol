@@ -3,7 +3,7 @@ import { Wallet, TrendingUp, TrendingDown, Scale, Landmark, AlertTriangle, Arrow
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useFinanceAccounts } from "@/hooks/useFinanceAccounts";
+import { useFinanceAccounts, isPlatformAccount, isBankAccount } from "@/hooks/useFinanceAccounts";
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, differenceInCalendarDays, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -214,8 +214,11 @@ export default function FinancasDashboard() {
   const despesas = transactions.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
   const saldo = receitas - despesas;
 
-  // Account totals
-  const totalBalance = activeAccounts.reduce((s, a) => s + Number(a.balance), 0);
+  // Account totals - separate bank from platform
+  const activeBankAccounts = activeAccounts.filter(isBankAccount);
+  const activePlatformAccounts = activeAccounts.filter(isPlatformAccount);
+  const totalBalance = activeBankAccounts.reduce((s, a) => s + Number(a.balance), 0);
+  const totalPlatformBalance = activePlatformAccounts.reduce((s, a) => s + Number(a.balance), 0);
   const totalAllocated = (envelopes as any[]).filter((e: any) => e.is_active).reduce((s: number, e: any) => s + Number(e.allocated_amount), 0);
   const dinheiroLivre = totalBalance - totalAllocated;
 
