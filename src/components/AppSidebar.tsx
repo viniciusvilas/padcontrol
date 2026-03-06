@@ -1,7 +1,7 @@
 import {
   Package, Clock, Phone, PhoneCall, AlertTriangle, CheckCircle, XCircle,
   Megaphone, LayoutDashboard, TrendingUp, Trophy, LogOut, Download,
-  Wallet, ArrowLeftRight, Receipt, LineChart
+  Wallet, ArrowLeftRight, Receipt, LineChart, PieChart
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -42,6 +42,7 @@ const menuFinancas = [
   { title: "Dashboard", url: "/financas", icon: Wallet },
   { title: "Transações", url: "/financas/transacoes", icon: ArrowLeftRight },
   { title: "Contas a Pagar", url: "/financas/contas-a-pagar", icon: Receipt },
+  { title: "Orçamento", url: "/financas/orcamento", icon: PieChart },
   { title: "Investimentos", url: "/financas/investimentos", icon: TrendingUp },
   { title: "Projeções", url: "/financas/projecoes", icon: LineChart },
 ];

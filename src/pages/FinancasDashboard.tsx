@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Wallet, TrendingUp, TrendingDown, Scale, Landmark, AlertTriangle, ArrowLeftRight, Package } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Scale, Landmark, AlertTriangle, ArrowLeftRight, Package, PieChart as PieChartIcon } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +8,7 @@ import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 
@@ -109,7 +110,23 @@ export default function FinancasDashboard() {
     enabled: !!user,
   });
 
-  // PAD revenue (paid orders from pedidos table for selected month)
+  // Budgets for the month
+  const { data: budgets = [] } = useQuery({
+    queryKey: ["fin-budgets", user?.id, selectedMonth],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("finance_budgets")
+        .select("*")
+        .eq("user_id", user!.id)
+        .eq("month", format(monthStart, "yyyy-MM-dd"))
+        .order("category");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+
   const { data: pedidosPagos = [] } = useQuery({
     queryKey: ["pad-revenue", user?.id, selectedMonth],
     queryFn: async () => {
@@ -183,7 +200,21 @@ export default function FinancasDashboard() {
   const saldo = receitas - despesas;
   const patrimonio = investments.reduce((s: number, inv: any) => s + Number(inv.current_value), 0);
 
-  // Bar chart data (last 6 months)
+  // Budget alerts
+  const budgetAlerts = useMemo(() => {
+    return budgets.map((b: any) => {
+      const spent = transactions
+        .filter((t: any) => t.type === "expense" && t.category === b.category)
+        .reduce((s: number, t: any) => s + Number(t.amount), 0);
+      const limit = Number(b.monthly_limit);
+      const pct = limit > 0 ? (spent / limit) * 100 : 0;
+      return { category: b.category, limit, spent, pct, remaining: limit - spent };
+    }).sort((a: any, b: any) => b.pct - a.pct);
+  }, [budgets, transactions]);
+
+  const overspentCategories = budgetAlerts.filter((b: any) => b.pct >= 100);
+  const topBudgetAlerts = budgetAlerts.slice(0, 3);
+
   const barData = useMemo(() => {
     const months: { label: string; income: number; expense: number }[] = [];
     for (let i = 5; i >= 0; i--) {
@@ -231,6 +262,19 @@ export default function FinancasDashboard() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Budget overspend banner */}
+      {overspentCategories.length > 0 && (
+        <div className="flex items-center gap-3 p-4 rounded-lg border border-destructive/50 bg-destructive/5">
+          <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
+          <div>
+            <p className="font-medium text-sm text-destructive">Orçamento estourado!</p>
+            <p className="text-xs text-muted-foreground">
+              {overspentCategories.map((b: any) => b.category).join(", ")} — ultrapassaram o limite definido para este mês.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Metric cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -324,6 +368,39 @@ export default function FinancasDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Budget alerts section */}
+      {topBudgetAlerts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <PieChartIcon className="h-4 w-4" /> Orçamento do Mês
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {topBudgetAlerts.map((b: any) => {
+                const color = b.pct >= 100 ? "bg-destructive" : b.pct >= 70 ? "bg-yellow-500" : "bg-success";
+                return (
+                  <div key={b.category} className={`p-3 rounded-lg border ${b.pct >= 100 ? "border-destructive/50" : "border-border"}`}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-medium">{b.category}</span>
+                      {b.pct >= 100 && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Estourado</Badge>}
+                    </div>
+                    <div className="relative h-2 rounded-full bg-muted mb-1">
+                      <div className={`absolute inset-0 h-2 rounded-full ${color}`} style={{ width: `${Math.min(b.pct, 100)}%` }} />
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>R$ {b.spent.toFixed(2)} / R$ {b.limit.toFixed(2)}</span>
+                      <span>{b.pct.toFixed(0)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Bottom sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
