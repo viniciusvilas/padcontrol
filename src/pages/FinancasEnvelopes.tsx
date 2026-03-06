@@ -115,8 +115,6 @@ export default function FinancasEnvelopes() {
     setDialogOpen(true);
   };
 
-  if (isLoading) return <div className="text-muted-foreground p-6">Carregando envelopes...</div>;
-
   const totalAllocated = envelopes.filter((e) => e.is_active).reduce((s, e) => s + Number(e.allocated_amount), 0);
 
   // Group envelopes by account
