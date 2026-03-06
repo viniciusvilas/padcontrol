@@ -343,10 +343,10 @@ export default function FinancasContasPagar() {
             </div>
             <div>
               <Label>Conta</Label>
-              <Select value={form.account_id} onValueChange={(v) => setForm({ ...form, account_id: v })}>
+              <Select value={form.account_id || "none"} onValueChange={(v) => setForm({ ...form, account_id: v === "none" ? "" : v })}>
                 <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma</SelectItem>
+                  <SelectItem value="none">Nenhuma</SelectItem>
                   {activeAccounts.map((a) => (
                     <SelectItem key={a.id} value={a.id}>
                       <span className="flex items-center gap-2">
