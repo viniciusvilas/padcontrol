@@ -233,7 +233,7 @@ export default function FinancasDashboard() {
       </div>
 
       {/* Metric cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">Receitas do mês</CardTitle>
@@ -270,6 +270,16 @@ export default function FinancasDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">R$ {patrimonio.toFixed(2)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Receita PAD</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-success">R$ {padRevenue.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">{pedidosPagos.length} vendas pagas</p>
           </CardContent>
         </Card>
       </div>
