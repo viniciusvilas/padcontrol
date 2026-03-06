@@ -169,6 +169,25 @@ export default function FinancasDashboard() {
     enabled: !!user,
   });
 
+  // Receivable installments for current month
+  const { data: receivableInstallmentsMonth = [] } = useQuery({
+    queryKey: ["fin-receivable-installments-month", user?.id],
+    queryFn: async () => {
+      const now = new Date();
+      const ms = format(startOfMonth(now), "yyyy-MM-dd");
+      const me = format(endOfMonth(now), "yyyy-MM-dd");
+      const { data, error } = await supabase
+        .from("finance_receivable_installments").select("*")
+        .eq("user_id", user!.id)
+        .eq("status", "pending")
+        .gte("due_date", ms)
+        .lte("due_date", me);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
   // PAD revenue
   const { data: pedidosPagos = [] } = useQuery({
     queryKey: ["pad-revenue", user?.id, selectedMonth],
