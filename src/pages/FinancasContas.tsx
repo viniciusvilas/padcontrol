@@ -112,8 +112,8 @@ export default function FinancasContas() {
   const platformAccounts = accounts.filter((a) => isPlatformAccount(a));
   const activeBankAccounts = bankAccounts.filter((a) => a.is_active);
   const activePlatformAccounts = platformAccounts.filter((a) => a.is_active);
-  const totalBankBalance = activeBankAccounts.reduce((s, a) => s + Number(a.balance), 0);
-  const totalPlatformBalance = activePlatformAccounts.reduce((s, a) => s + Number(a.balance), 0);
+  const totalBankBalance = activeBankAccounts.reduce((s, a) => s + a.computedBalance, 0);
+  const totalPlatformBalance = activePlatformAccounts.reduce((s, a) => s + a.computedBalance, 0);
   const totalBalance = totalBankBalance;
 
   const groupedEnvelopes = useMemo(() => {
@@ -131,7 +131,7 @@ export default function FinancasContas() {
       const allocated = envelopes
         .filter((e) => e.account_id === a.id && e.is_active)
         .reduce((s, e) => s + Number(e.allocated_amount), 0);
-      map.set(a.id, Number(a.balance) - allocated);
+      map.set(a.id, a.computedBalance - allocated);
     });
     return map;
   }, [accounts, envelopes]);
@@ -207,15 +207,7 @@ export default function FinancasContas() {
       });
       if (error) throw error;
 
-      // Update balances
-      const fromAcc = accountMap.get(f.from_account_id);
-      const toAcc = accountMap.get(f.to_account_id);
-      if (fromAcc) {
-        await supabase.from("finance_accounts").update({ balance: Number(fromAcc.balance) - amount }).eq("id", f.from_account_id);
-      }
-      if (toAcc) {
-        await supabase.from("finance_accounts").update({ balance: Number(toAcc.balance) + amount }).eq("id", f.to_account_id);
-      }
+      // Balance is computed dynamically — no manual update needed
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["finance-transfers"] });
@@ -247,8 +239,7 @@ export default function FinancasContas() {
         amount, date: f.date, description: f.description || "Saque de plataforma", category: "Saque de Plataforma",
       });
       if (error) throw error;
-      await supabase.from("finance_accounts").update({ balance: Number(fromAcc.balance) - amount }).eq("id", f.from_account_id);
-      await supabase.from("finance_accounts").update({ balance: Number(toAcc.balance) + amount }).eq("id", f.to_account_id);
+      // Balance is computed dynamically — no manual update needed
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["finance-transfers"] });
@@ -373,8 +364,8 @@ export default function FinancasContas() {
                   <Badge variant="outline" className="text-xs">{acc.type.toUpperCase()}</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">{acc.owner}</p>
-                <p className={`text-xl font-bold ${Number(acc.balance) >= 0 ? "text-success" : "text-destructive"}`}>
-                  R$ {Number(acc.balance).toFixed(2)}
+                <p className={`text-xl font-bold ${acc.computedBalance >= 0 ? "text-success" : "text-destructive"}`}>
+                  R$ {acc.computedBalance.toFixed(2)}
                 </p>
                 <div className="flex gap-1 pt-1">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
@@ -418,8 +409,8 @@ export default function FinancasContas() {
                       <Badge variant="outline" className="text-xs">PLATAFORMA</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">{acc.owner}</p>
-                    <p className={`text-xl font-bold ${Number(acc.balance) >= 0 ? "text-success" : "text-destructive"}`}>
-                      R$ {Number(acc.balance).toFixed(2)}
+                    <p className={`text-xl font-bold ${acc.computedBalance >= 0 ? "text-success" : "text-destructive"}`}>
+                      R$ {acc.computedBalance.toFixed(2)}
                     </p>
                     <div className="flex gap-1 pt-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
@@ -621,7 +612,7 @@ export default function FinancasContas() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Saldo</Label>
+                <Label>Saldo Inicial (abertura)</Label>
                 <Input type="number" step="0.01" value={accountForm.balance} onChange={(e) => setAccountForm({ ...accountForm, balance: e.target.value })} />
               </div>
               <div>

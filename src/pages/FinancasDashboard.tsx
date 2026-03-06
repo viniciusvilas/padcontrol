@@ -217,8 +217,8 @@ export default function FinancasDashboard() {
   // Account totals - separate bank from platform
   const activeBankAccounts = activeAccounts.filter(isBankAccount);
   const activePlatformAccounts = activeAccounts.filter(isPlatformAccount);
-  const totalBalance = activeBankAccounts.reduce((s, a) => s + Number(a.balance), 0);
-  const totalPlatformBalance = activePlatformAccounts.reduce((s, a) => s + Number(a.balance), 0);
+  const totalBalance = activeBankAccounts.reduce((s, a) => s + a.computedBalance, 0);
+  const totalPlatformBalance = activePlatformAccounts.reduce((s, a) => s + a.computedBalance, 0);
   const totalAllocated = (envelopes as any[]).filter((e: any) => e.is_active).reduce((s: number, e: any) => s + Number(e.allocated_amount), 0);
   const dinheiroLivre = totalBalance - totalAllocated;
 
@@ -320,8 +320,8 @@ export default function FinancasDashboard() {
                   {acc.name}
                   <Badge variant="outline" className="text-[9px] ml-auto">{acc.type.toUpperCase()}</Badge>
                 </p>
-                <p className={`text-lg font-bold mt-1 ${Number(acc.balance) >= 0 ? "text-success" : "text-destructive"}`}>
-                  R$ {Number(acc.balance).toFixed(2)}
+                <p className={`text-lg font-bold mt-1 ${acc.computedBalance >= 0 ? "text-success" : "text-destructive"}`}>
+                  R$ {acc.computedBalance.toFixed(2)}
                 </p>
               </CardContent>
             </Card>
@@ -380,8 +380,8 @@ export default function FinancasDashboard() {
                     {acc.name}
                     <Badge variant="outline" className="text-[9px] ml-auto">PLATAFORMA</Badge>
                   </p>
-                  <p className={`text-lg font-bold mt-1 ${Number(acc.balance) >= 0 ? "text-success" : "text-destructive"}`}>
-                    R$ {Number(acc.balance).toFixed(2)}
+                  <p className={`text-lg font-bold mt-1 ${acc.computedBalance >= 0 ? "text-success" : "text-destructive"}`}>
+                    R$ {acc.computedBalance.toFixed(2)}
                   </p>
                 </CardContent>
               </Card>
