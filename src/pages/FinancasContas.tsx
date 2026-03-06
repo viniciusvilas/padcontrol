@@ -258,6 +258,8 @@ export default function FinancasContas() {
     },
     onError: (e: any) => toast.error(e.message || "Erro ao registrar saque."),
   });
+
+  const saveEnvelopeMutation = useMutation({
     mutationFn: async (f: EnvelopeForm) => {
       const payload = {
         user_id: user!.id, name: f.name, account_id: f.account_id,
