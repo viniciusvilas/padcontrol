@@ -320,8 +320,8 @@ export default function FinancasDashboard() {
                   {acc.name}
                   <Badge variant="outline" className="text-[9px] ml-auto">{acc.type.toUpperCase()}</Badge>
                 </p>
-                <p className={`text-lg font-bold mt-1 ${acc.computedBalance >= 0 ? "text-success" : "text-destructive"}`}>
-                  R$ {acc.computedBalance.toFixed(2)}
+                <p className={`text-lg font-bold mt-1 ${(acc.computedBalance ?? 0) >= 0 ? "text-success" : "text-destructive"}`}>
+                  R$ {(acc.computedBalance ?? 0).toFixed(2)}
                 </p>
               </CardContent>
             </Card>
@@ -380,8 +380,8 @@ export default function FinancasDashboard() {
                     {acc.name}
                     <Badge variant="outline" className="text-[9px] ml-auto">PLATAFORMA</Badge>
                   </p>
-                  <p className={`text-lg font-bold mt-1 ${acc.computedBalance >= 0 ? "text-success" : "text-destructive"}`}>
-                    R$ {acc.computedBalance.toFixed(2)}
+                  <p className={`text-lg font-bold mt-1 ${(acc.computedBalance ?? 0) >= 0 ? "text-success" : "text-destructive"}`}>
+                    R$ {(acc.computedBalance ?? 0).toFixed(2)}
                   </p>
                 </CardContent>
               </Card>
