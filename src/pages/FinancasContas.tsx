@@ -846,6 +846,65 @@ export default function FinancasContas() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Saque de Plataforma Dialog */}
+      <Dialog open={saqueDialog} onOpenChange={setSaqueDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Registrar Saque de Plataforma</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); saveSaqueMutation.mutate(saqueForm); }} className="space-y-4">
+            <div>
+              <Label>Conta origem (Plataforma)</Label>
+              <Select value={saqueForm.from_account_id} onValueChange={(v) => setSaqueForm({ ...saqueForm, from_account_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione a plataforma" /></SelectTrigger>
+                <SelectContent>
+                  {activePlatformAccounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: a.color }} />
+                        {a.name} (R$ {Number(a.balance).toFixed(2)})
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Conta destino (Bancária)</Label>
+              <Select value={saqueForm.to_account_id} onValueChange={(v) => setSaqueForm({ ...saqueForm, to_account_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione a conta bancária" /></SelectTrigger>
+                <SelectContent>
+                  {activeBankAccounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: a.color }} />
+                        {a.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Valor</Label>
+                <Input type="number" step="0.01" min="0.01" value={saqueForm.amount} onChange={(e) => setSaqueForm({ ...saqueForm, amount: e.target.value })} required />
+              </div>
+              <div>
+                <Label>Data</Label>
+                <Input type="date" value={saqueForm.date} onChange={(e) => setSaqueForm({ ...saqueForm, date: e.target.value })} required />
+              </div>
+            </div>
+            <div>
+              <Label>Descrição (opcional)</Label>
+              <Input value={saqueForm.description} onChange={(e) => setSaqueForm({ ...saqueForm, description: e.target.value })} placeholder="Ex: Saque quinzenal Keed" />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setSaqueDialog(false)}>Cancelar</Button>
+              <Button type="submit" disabled={saveSaqueMutation.isPending}>{saveSaqueMutation.isPending ? "Salvando..." : "Registrar Saque"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
