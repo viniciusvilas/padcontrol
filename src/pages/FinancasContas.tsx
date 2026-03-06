@@ -352,9 +352,9 @@ export default function FinancasContas() {
           </div>
         </div>
 
-        {/* Saldo Total */}
+        {/* Saldo Total Bancário */}
         <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Saldo Total Consolidado</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Saldo Total Contas Bancárias</CardTitle></CardHeader>
           <CardContent>
             <div className={`text-3xl font-bold ${totalBalance >= 0 ? "text-success" : "text-destructive"}`}>
               R$ {totalBalance.toFixed(2)}
@@ -362,9 +362,9 @@ export default function FinancasContas() {
           </CardContent>
         </Card>
 
-        {/* Account Cards */}
+        {/* Bank Account Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {accounts.map((acc) => (
+          {bankAccounts.map((acc) => (
             <Card key={acc.id} className={`relative overflow-hidden ${!acc.is_active ? "opacity-50" : ""}`}>
               <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: acc.color }} />
               <CardContent className="pt-5 space-y-3">
@@ -391,6 +391,53 @@ export default function FinancasContas() {
             </Card>
           ))}
         </div>
+
+        {/* ═══ SALDO EM PLATAFORMAS ═══ */}
+        {platformAccounts.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <ArrowDownToLine className="h-5 w-5 text-primary" /> Saldo em Plataformas
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Total a Sacar */}
+              <Card className="border-warning/30 bg-warning/5">
+                <CardContent className="pt-4 pb-3">
+                  <p className="text-xs text-muted-foreground font-medium">💸 Total a Sacar</p>
+                  <p className="text-2xl font-bold text-warning mt-1">
+                    R$ {totalPlatformBalance.toFixed(2)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">Dinheiro ainda nas plataformas</p>
+                </CardContent>
+              </Card>
+              {platformAccounts.map((acc) => (
+                <Card key={acc.id} className={`relative overflow-hidden ${!acc.is_active ? "opacity-50" : ""}`}>
+                  <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: acc.color }} />
+                  <CardContent className="pt-5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-base">{acc.name}</h3>
+                      <Badge variant="outline" className="text-xs">PLATAFORMA</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{acc.owner}</p>
+                    <p className={`text-xl font-bold ${Number(acc.balance) >= 0 ? "text-success" : "text-destructive"}`}>
+                      R$ {Number(acc.balance).toFixed(2)}
+                    </p>
+                    <div className="flex gap-1 pt-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                        setAccountForm({ id: acc.id, name: acc.name, type: acc.type, owner: acc.owner, color: acc.color, balance: String(acc.balance) });
+                        setAccountDialog(true);
+                      }}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className={`h-8 w-8 ${acc.is_active ? "text-success" : "text-muted-foreground"}`} onClick={() => toggleAccountMutation.mutate(acc)}>
+                        <Power className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Transfer History */}
         {transfers.length > 0 && (
