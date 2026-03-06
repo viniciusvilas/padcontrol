@@ -234,7 +234,30 @@ export default function FinancasContas() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["finance-transfers"] }); toast.success("Transferência excluída!"); },
   });
 
-  const saveEnvelopeMutation = useMutation({
+  const saveSaqueMutation = useMutation({
+    mutationFn: async (f: TransferForm) => {
+      if (f.from_account_id === f.to_account_id) throw new Error("Contas devem ser diferentes");
+      const fromAcc = accountMap.get(f.from_account_id);
+      const toAcc = accountMap.get(f.to_account_id);
+      if (!fromAcc || !isPlatformAccount(fromAcc)) throw new Error("Conta origem deve ser uma plataforma");
+      if (!toAcc || isPlatformAccount(toAcc)) throw new Error("Conta destino deve ser uma conta bancária");
+      const amount = Number(f.amount);
+      const { error } = await supabase.from("finance_transfers").insert({
+        user_id: user!.id, from_account_id: f.from_account_id, to_account_id: f.to_account_id,
+        amount, date: f.date, description: f.description || "Saque de plataforma", category: "Saque de Plataforma",
+      });
+      if (error) throw error;
+      await supabase.from("finance_accounts").update({ balance: Number(fromAcc.balance) - amount }).eq("id", f.from_account_id);
+      await supabase.from("finance_accounts").update({ balance: Number(toAcc.balance) + amount }).eq("id", f.to_account_id);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["finance-transfers"] });
+      qc.invalidateQueries({ queryKey: ["finance-accounts"] });
+      setSaqueDialog(false); setSaqueForm({ ...emptyTransferForm, category: "Saque de Plataforma" });
+      toast.success("Saque registrado!");
+    },
+    onError: (e: any) => toast.error(e.message || "Erro ao registrar saque."),
+  });
     mutationFn: async (f: EnvelopeForm) => {
       const payload = {
         user_id: user!.id, name: f.name, account_id: f.account_id,
