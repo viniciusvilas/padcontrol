@@ -37,6 +37,7 @@ function buildMonthOptions() {
 
 export default function FinancasDashboard() {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
   const monthOptions = useMemo(buildMonthOptions, []);
 
