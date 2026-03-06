@@ -369,6 +369,39 @@ export default function FinancasDashboard() {
         </Card>
       </div>
 
+      {/* Budget alerts section */}
+      {topBudgetAlerts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <PieChartIcon className="h-4 w-4" /> Orçamento do Mês
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {topBudgetAlerts.map((b: any) => {
+                const color = b.pct >= 100 ? "bg-destructive" : b.pct >= 70 ? "bg-yellow-500" : "bg-success";
+                return (
+                  <div key={b.category} className={`p-3 rounded-lg border ${b.pct >= 100 ? "border-destructive/50" : "border-border"}`}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-medium">{b.category}</span>
+                      {b.pct >= 100 && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Estourado</Badge>}
+                    </div>
+                    <div className="relative h-2 rounded-full bg-muted mb-1">
+                      <div className={`absolute inset-0 h-2 rounded-full ${color}`} style={{ width: `${Math.min(b.pct, 100)}%` }} />
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>R$ {b.spent.toFixed(2)} / R$ {b.limit.toFixed(2)}</span>
+                      <span>{b.pct.toFixed(0)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Bottom sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Contas a Vencer */}
