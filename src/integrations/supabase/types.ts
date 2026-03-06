@@ -196,6 +196,38 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_distribution_rules: {
+        Row: {
+          envelope_id: string
+          id: string
+          percentage: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          envelope_id: string
+          id?: string
+          percentage?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          envelope_id?: string
+          id?: string
+          percentage?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_distribution_rules_envelope_id_fkey"
+            columns: ["envelope_id"]
+            isOneToOne: false
+            referencedRelation: "finance_envelopes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_envelopes: {
         Row: {
           account_id: string

@@ -26,8 +26,6 @@ import FinancasProjecoes from "./pages/FinancasProjecoes";
 import FinancasOrcamento from "./pages/FinancasOrcamento";
 import FinancasCategorias from "./pages/FinancasCategorias";
 import FinancasContas from "./pages/FinancasContas";
-import FinancasTransferencias from "./pages/FinancasTransferencias";
-import FinancasEnvelopes from "./pages/FinancasEnvelopes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -87,8 +85,6 @@ const App = () => (
               <Route path="/financas/projecoes" element={<FinancasProjecoes />} />
               <Route path="/financas/categorias" element={<FinancasCategorias />} />
               <Route path="/financas/contas" element={<FinancasContas />} />
-              <Route path="/financas/transferencias" element={<FinancasTransferencias />} />
-              <Route path="/financas/envelopes" element={<FinancasEnvelopes />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
