@@ -343,6 +343,9 @@ export default function FinancasDashboard() {
   }, [billsMonth]);
   const billsNext7Total = billsNext7.reduce((s: number, b: any) => s + Number(b.amount), 0);
 
+  // Receivables month total
+  const receivableMonthTotal = (receivableInstallmentsMonth as any[]).reduce((s: number, i: any) => s + Number(i.amount), 0);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -482,7 +485,7 @@ export default function FinancasDashboard() {
       )}
 
       {/* Metric cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">Receitas do mês</CardTitle>
@@ -542,6 +545,18 @@ export default function FinancasDashboard() {
             <CardContent>
               <div className={`text-2xl font-bold ${billsNext7Total > 0 ? "text-destructive" : "text-muted-foreground"}`}>R$ {billsNext7Total.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground">{billsNext7.length} conta{billsNext7.length !== 1 ? "s" : ""} a vencer</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link to="/financas/a-receber">
+          <Card className="hover:border-purple-500/30 border-purple-500/20 bg-purple-500/5 transition-colors cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">A Receber (mês)</CardTitle>
+              <ClipboardList className="h-4 w-4 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">R$ {receivableMonthTotal.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">{(receivableInstallmentsMonth as any[]).length} parcela{(receivableInstallmentsMonth as any[]).length !== 1 ? "s" : ""} pendente{(receivableInstallmentsMonth as any[]).length !== 1 ? "s" : ""}</p>
             </CardContent>
           </Card>
         </Link>
