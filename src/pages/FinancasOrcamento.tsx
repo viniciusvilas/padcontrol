@@ -84,26 +84,8 @@ export default function FinancasOrcamento() {
     enabled: !!user,
   });
 
-  // All categories from transactions (for the dropdown)
-  const { data: allTransactions = [] } = useQuery({
-    queryKey: ["fin-all-categories", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("finance_transactions")
-        .select("category")
-        .eq("user_id", user!.id)
-        .neq("category", "");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
-
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    allTransactions.forEach((t: any) => { if (t.category) set.add(t.category); });
-    return Array.from(set).sort();
-  }, [allTransactions]);
+  // Categories from hook (already loaded via useFinanceCategories)
+  const categories = useMemo(() => expenseCategories.map((c) => c.name).sort(), [expenseCategories]);
 
   // Spent per category
   const spentByCategory = useMemo(() => {
