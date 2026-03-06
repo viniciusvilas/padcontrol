@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
-import { ArrowLeftRight, Plus, Search, Pencil, Trash2, RotateCcw } from "lucide-react";
+import { ArrowLeftRight, Plus, Search, Pencil, Trash2, RotateCcw, Download } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, parseISO, subDays, startOfMonth } from "date-fns";
+import { format, parseISO, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 interface TxForm {
@@ -170,6 +171,70 @@ export default function FinancasTransacoes() {
 
   const openNew = () => { setForm(emptyForm); setDialogOpen(true); };
 
+  // Import sales from pedidos
+  const [importing, setImporting] = useState(false);
+  const importSalesMutation = useMutation({
+    mutationFn: async () => {
+      setImporting(true);
+      const now = new Date();
+      const mStart = format(startOfMonth(now), "yyyy-MM-dd");
+      const mEnd = format(endOfMonth(now), "yyyy-MM-dd");
+
+      // Get paid orders this month
+      const { data: paidOrders, error: e1 } = await supabase
+        .from("pedidos")
+        .select("id, data, cliente, produto, valor")
+        .eq("user_id", user!.id)
+        .eq("pedido_pago", true)
+        .gte("data", mStart)
+        .lte("data", mEnd);
+      if (e1) throw e1;
+      if (!paidOrders || paidOrders.length === 0) throw new Error("Nenhuma venda paga no mês.");
+
+      // Get existing imported transactions to avoid duplicates (check notes for pedido ID)
+      const { data: existing, error: e2 } = await supabase
+        .from("finance_transactions")
+        .select("notes")
+        .eq("user_id", user!.id)
+        .eq("category", "Pay After Delivery")
+        .gte("date", mStart)
+        .lte("date", mEnd);
+      if (e2) throw e2;
+
+      const importedIds = new Set((existing || []).map((t: any) => t.notes).filter(Boolean));
+      const toInsert = paidOrders
+        .filter((o) => !importedIds.has(`pedido:${o.id}`))
+        .map((o) => ({
+          user_id: user!.id,
+          date: o.data,
+          description: `Venda: ${o.cliente} - ${o.produto}`,
+          amount: Number(o.valor),
+          type: "income" as const,
+          category: "Pay After Delivery",
+          source: "Pay After Delivery",
+          is_recurring: false,
+          notes: `pedido:${o.id}`,
+        }));
+
+      if (toInsert.length === 0) throw new Error("Todas as vendas já foram importadas.");
+
+      const { error: e3 } = await supabase.from("finance_transactions").insert(toInsert);
+      if (e3) throw e3;
+      return toInsert.length;
+    },
+    onSuccess: (count) => {
+      qc.invalidateQueries({ queryKey: ["fin-transactions-all"] });
+      qc.invalidateQueries({ queryKey: ["fin-transactions"] });
+      qc.invalidateQueries({ queryKey: ["fin-transactions-6m"] });
+      toast.success(`${count} vendas importadas como receitas!`);
+      setImporting(false);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Erro ao importar vendas.");
+      setImporting(false);
+    },
+  });
+
   if (isLoading) return <div className="text-muted-foreground p-6">Carregando transações...</div>;
 
   return (
@@ -180,7 +245,18 @@ export default function FinancasTransacoes() {
           <ArrowLeftRight className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Transações</h1>
         </div>
-        <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Nova Transação</Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card">
+            <Download className="h-4 w-4 text-muted-foreground" />
+            <Label className="text-xs cursor-pointer whitespace-nowrap">Importar vendas PAD</Label>
+            <Switch
+              checked={importing}
+              onCheckedChange={() => importSalesMutation.mutate()}
+              disabled={importSalesMutation.isPending}
+            />
+          </div>
+          <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Nova Transação</Button>
+        </div>
       </div>
 
       {/* Summary */}
