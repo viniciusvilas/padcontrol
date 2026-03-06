@@ -319,6 +319,20 @@ export default function FinancasTransacoes() {
             {allCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={accountFilter} onValueChange={(v) => { setAccountFilter(v); setPage(0); }}>
+          <SelectTrigger className="w-40"><SelectValue placeholder="Conta" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas contas</SelectItem>
+            {allAccounts.map((a) => (
+              <SelectItem key={a.id} value={a.id}>
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: a.color }} />
+                  {a.name}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={period} onValueChange={(v) => { setPeriod(v); setPage(0); }}>
           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
