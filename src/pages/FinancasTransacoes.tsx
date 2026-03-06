@@ -14,7 +14,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 interface TxForm {
@@ -172,22 +171,18 @@ export default function FinancasTransacoes() {
   const openNew = () => { setForm(emptyForm); setDialogOpen(true); };
 
   // Import sales from pedidos
-  const [importing, setImporting] = useState(false);
   const importSalesMutation = useMutation({
     mutationFn: async () => {
-      setImporting(true);
-
-      // Get ALL paid orders (no month filter - import everything not yet imported)
+      // Fetch ALL paid orders without limit
       const { data: paidOrders, error: e1 } = await supabase
         .from("pedidos")
-        .select("id, data, cliente, produto, valor")
+        .select("*")
         .eq("user_id", user!.id)
-        .eq("pedido_pago", true)
-        .order("data", { ascending: false });
+        .eq("pedido_pago", true);
       if (e1) throw e1;
-      if (!paidOrders || paidOrders.length === 0) throw new Error("Nenhuma venda paga encontrada.");
+      if (!paidOrders || paidOrders.length === 0) return { imported: 0, skipped: 0 };
 
-      // Get ALL existing imported transaction notes to check duplicates by pedido ID
+      // Fetch all existing imported notes for duplicate check
       const { data: existing, error: e2 } = await supabase
         .from("finance_transactions")
         .select("notes")
@@ -197,44 +192,47 @@ export default function FinancasTransacoes() {
 
       const importedIds = new Set((existing || []).map((t: any) => t.notes).filter(Boolean));
 
-      // Filter out already imported orders individually by ID
-      const toInsert = paidOrders
-        .filter((o) => !importedIds.has(`pedido:${o.id}`))
-        .map((o) => ({
+      const toInsert: any[] = [];
+      let skipped = 0;
+
+      for (const o of paidOrders) {
+        const ref = `pedido:${o.id}`;
+        if (importedIds.has(ref)) {
+          skipped++;
+          continue;
+        }
+        toInsert.push({
           user_id: user!.id,
           date: o.data,
           description: `Venda: ${o.cliente} - ${o.produto}`,
           amount: Number(o.valor),
           type: "income" as const,
           category: "Pay After Delivery",
-          source: "Pay After Delivery",
+          source: "Módulo de Vendas",
           is_recurring: false,
-          notes: `pedido:${o.id}`,
-        }));
+          notes: ref,
+        });
+      }
 
-      if (toInsert.length === 0) throw new Error("Todas as vendas já foram importadas.");
-
-      // Insert in batches of 50 to avoid payload limits
-      let inserted = 0;
+      // Insert in batches of 50
       for (let i = 0; i < toInsert.length; i += 50) {
         const batch = toInsert.slice(i, i + 50);
         const { error: e3 } = await supabase.from("finance_transactions").insert(batch);
         if (e3) throw e3;
-        inserted += batch.length;
       }
-      return inserted;
+      return { imported: toInsert.length, skipped };
     },
-    onSuccess: (count) => {
+    onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["fin-transactions-all"] });
       qc.invalidateQueries({ queryKey: ["fin-transactions"] });
       qc.invalidateQueries({ queryKey: ["fin-transactions-6m"] });
-      toast.success(`${count} vendas importadas como receitas!`);
-      setImporting(false);
+      if (result.imported === 0 && result.skipped === 0) {
+        toast.info("Nenhuma venda paga encontrada.");
+      } else {
+        toast.success(`${result.imported} pedidos importados, ${result.skipped} já existiam`);
+      }
     },
-    onError: (err: any) => {
-      toast.error(err.message || "Erro ao importar vendas.");
-      setImporting(false);
-    },
+    onError: () => toast.error("Erro ao importar vendas."),
   });
 
   if (isLoading) return <div className="text-muted-foreground p-6">Carregando transações...</div>;
@@ -248,15 +246,14 @@ export default function FinancasTransacoes() {
           <h1 className="text-2xl font-bold">Transações</h1>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card">
-            <Download className="h-4 w-4 text-muted-foreground" />
-            <Label className="text-xs cursor-pointer whitespace-nowrap">Importar vendas PAD</Label>
-            <Switch
-              checked={importing}
-              onCheckedChange={() => importSalesMutation.mutate()}
-              disabled={importSalesMutation.isPending}
-            />
-          </div>
+          <Button
+            variant="outline"
+            onClick={() => importSalesMutation.mutate()}
+            disabled={importSalesMutation.isPending}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {importSalesMutation.isPending ? "Sincronizando..." : "Sincronizar Vendas"}
+          </Button>
           <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Nova Transação</Button>
         </div>
       </div>
