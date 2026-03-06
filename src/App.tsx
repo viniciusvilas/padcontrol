@@ -18,6 +18,11 @@ import Dashboard from "./pages/Dashboard";
 import Projecao from "./pages/Projecao";
 import Nivel from "./pages/Nivel";
 import Install from "./pages/Install";
+import FinancasDashboard from "./pages/FinancasDashboard";
+import FinancasTransacoes from "./pages/FinancasTransacoes";
+import FinancasContasPagar from "./pages/FinancasContasPagar";
+import FinancasInvestimentos from "./pages/FinancasInvestimentos";
+import FinancasProjecoes from "./pages/FinancasProjecoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,6 +74,11 @@ const App = () => (
               <Route path="/projecao" element={<Projecao />} />
               <Route path="/nivel" element={<Nivel />} />
               <Route path="/install" element={<Install />} />
+              <Route path="/financas" element={<FinancasDashboard />} />
+              <Route path="/financas/transacoes" element={<FinancasTransacoes />} />
+              <Route path="/financas/contas-a-pagar" element={<FinancasContasPagar />} />
+              <Route path="/financas/investimentos" element={<FinancasInvestimentos />} />
+              <Route path="/financas/projecoes" element={<FinancasProjecoes />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

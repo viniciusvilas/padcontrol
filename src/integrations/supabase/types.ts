@@ -41,6 +41,162 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_bills: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          due_date: string
+          id: string
+          is_recurring: boolean
+          name: string
+          notes: string | null
+          recurrence_interval:
+            | Database["public"]["Enums"]["finance_recurrence_interval"]
+            | null
+          status: Database["public"]["Enums"]["finance_bill_status"]
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string
+          due_date: string
+          id?: string
+          is_recurring?: boolean
+          name: string
+          notes?: string | null
+          recurrence_interval?:
+            | Database["public"]["Enums"]["finance_recurrence_interval"]
+            | null
+          status?: Database["public"]["Enums"]["finance_bill_status"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          is_recurring?: boolean
+          name?: string
+          notes?: string | null
+          recurrence_interval?:
+            | Database["public"]["Enums"]["finance_recurrence_interval"]
+            | null
+          status?: Database["public"]["Enums"]["finance_bill_status"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      finance_income_sources: {
+        Row: {
+          created_at: string
+          expected_monthly_amount: number
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expected_monthly_amount?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expected_monthly_amount?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      finance_investments: {
+        Row: {
+          created_at: string
+          current_value: number
+          id: string
+          invested_amount: number
+          last_updated: string
+          name: string
+          notes: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          invested_amount?: number
+          last_updated?: string
+          name: string
+          notes?: string | null
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          invested_amount?: number
+          last_updated?: string
+          name?: string
+          notes?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      finance_transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          description: string
+          id: string
+          is_recurring: boolean
+          notes: string | null
+          source: string
+          type: Database["public"]["Enums"]["finance_transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          description: string
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          source?: string
+          type: Database["public"]["Enums"]["finance_transaction_type"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          source?: string
+          type?: Database["public"]["Enums"]["finance_transaction_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       metas: {
         Row: {
           created_at: string
@@ -190,7 +346,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      finance_bill_status: "pending" | "paid" | "overdue"
+      finance_recurrence_interval: "monthly" | "weekly" | "yearly"
+      finance_transaction_type: "income" | "expense"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -317,6 +475,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      finance_bill_status: ["pending", "paid", "overdue"],
+      finance_recurrence_interval: ["monthly", "weekly", "yearly"],
+      finance_transaction_type: ["income", "expense"],
+    },
   },
 } as const
