@@ -353,6 +353,19 @@ export default function FinancasDashboard() {
               <p className="text-[10px] text-muted-foreground">Saldo bancário - Envelopes alocados</p>
             </CardContent>
           </Card>
+
+          {/* Saldo Total (banco + plataformas) */}
+          <Card className="border-accent/30 bg-accent/5">
+            <CardContent className="pt-4 pb-3">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Scale className="h-3 w-3" /> 🏦 Saldo Total Geral
+              </p>
+              <p className={`text-lg font-bold mt-1 ${(totalBalance + totalPlatformBalance) >= 0 ? "text-success" : "text-destructive"}`}>
+                R$ {(totalBalance + totalPlatformBalance).toFixed(2)}
+              </p>
+              <p className="text-[10px] text-muted-foreground">Bancário + Plataformas</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Platform accounts section */}
