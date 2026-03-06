@@ -118,7 +118,7 @@ export default function FinancasTransacoes() {
   // Save mutation
   const saveMutation = useMutation({
     mutationFn: async (f: TxForm) => {
-      const payload = {
+      const payload: any = {
         user_id: user!.id,
         date: f.date,
         description: f.description,
@@ -128,6 +128,7 @@ export default function FinancasTransacoes() {
         source: f.source,
         is_recurring: f.is_recurring,
         notes: f.notes || null,
+        account_id: f.account_id || null,
       };
       if (f.id) {
         const { error } = await supabase.from("finance_transactions").update(payload).eq("id", f.id);
@@ -174,6 +175,7 @@ export default function FinancasTransacoes() {
       source: tx.source || "",
       is_recurring: tx.is_recurring,
       notes: tx.notes || "",
+      account_id: tx.account_id || "",
     });
     setDialogOpen(true);
   };
@@ -430,9 +432,28 @@ export default function FinancasTransacoes() {
                 </Select>
               </div>
             </div>
-            <div>
-              <Label>Fonte</Label>
-              <Input value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="Ex: Pay After Delivery" />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Fonte</Label>
+                <Input value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="Ex: Pay After Delivery" />
+              </div>
+              <div>
+                <Label>Conta</Label>
+                <Select value={form.account_id} onValueChange={(v) => setForm({ ...form, account_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhuma</SelectItem>
+                    {activeAccounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: a.color }} />
+                          {a.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Checkbox checked={form.is_recurring} onCheckedChange={(v) => setForm({ ...form, is_recurring: !!v })} />
