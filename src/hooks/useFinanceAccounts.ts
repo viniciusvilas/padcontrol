@@ -68,7 +68,7 @@ export function useFinanceAccounts() {
       }
 
       return (accRes.data || []).map((acc: any) => {
-        const initialBalance = Number(acc.balance);
+        const initialBalance = Number(acc.balance) || 0;
         const income = txIncomeMap.get(acc.id) || 0;
         const expense = txExpenseMap.get(acc.id) || 0;
         const transfersIn = trInMap.get(acc.id) || 0;
