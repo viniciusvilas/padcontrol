@@ -26,6 +26,7 @@ import FinancasProjecoes from "./pages/FinancasProjecoes";
 import FinancasOrcamento from "./pages/FinancasOrcamento";
 import FinancasCategorias from "./pages/FinancasCategorias";
 import FinancasContas from "./pages/FinancasContas";
+import FinancasAReceber from "./pages/FinancasAReceber";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -85,6 +86,7 @@ const App = () => (
               <Route path="/financas/projecoes" element={<FinancasProjecoes />} />
               <Route path="/financas/categorias" element={<FinancasCategorias />} />
               <Route path="/financas/contas" element={<FinancasContas />} />
+              <Route path="/financas/a-receber" element={<FinancasAReceber />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -341,6 +341,110 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_receivable_installments: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          installment_number: number
+          paid_at: string | null
+          receivable_id: string
+          status: Database["public"]["Enums"]["finance_installment_status"]
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          due_date: string
+          id?: string
+          installment_number: number
+          paid_at?: string | null
+          receivable_id: string
+          status?: Database["public"]["Enums"]["finance_installment_status"]
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          installment_number?: number
+          paid_at?: string | null
+          receivable_id?: string
+          status?: Database["public"]["Enums"]["finance_installment_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_receivable_installments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_receivable_installments_receivable_id_fkey"
+            columns: ["receivable_id"]
+            isOneToOne: false
+            referencedRelation: "finance_receivables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_receivables: {
+        Row: {
+          account_id: string | null
+          category: string
+          client_name: string
+          created_at: string
+          description: string
+          id: string
+          installments: number
+          notes: string | null
+          status: Database["public"]["Enums"]["finance_receivable_status"]
+          total_amount: number
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          category?: string
+          client_name: string
+          created_at?: string
+          description: string
+          id?: string
+          installments?: number
+          notes?: string | null
+          status?: Database["public"]["Enums"]["finance_receivable_status"]
+          total_amount?: number
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          category?: string
+          client_name?: string
+          created_at?: string
+          description?: string
+          id?: string
+          installments?: number
+          notes?: string | null
+          status?: Database["public"]["Enums"]["finance_receivable_status"]
+          total_amount?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_receivables_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_transactions: {
         Row: {
           account_id: string | null
@@ -597,6 +701,8 @@ export type Database = {
       finance_account_type: "pj" | "pf" | "plataforma"
       finance_bill_status: "pending" | "paid" | "overdue"
       finance_category_type: "income" | "expense" | "both"
+      finance_installment_status: "pending" | "paid" | "overdue"
+      finance_receivable_status: "pending" | "partial" | "completed" | "overdue"
       finance_recurrence_interval: "monthly" | "weekly" | "yearly"
       finance_transaction_type: "income" | "expense"
     }
@@ -729,6 +835,8 @@ export const Constants = {
       finance_account_type: ["pj", "pf", "plataforma"],
       finance_bill_status: ["pending", "paid", "overdue"],
       finance_category_type: ["income", "expense", "both"],
+      finance_installment_status: ["pending", "paid", "overdue"],
+      finance_receivable_status: ["pending", "partial", "completed", "overdue"],
       finance_recurrence_interval: ["monthly", "weekly", "yearly"],
       finance_transaction_type: ["income", "expense"],
     },
