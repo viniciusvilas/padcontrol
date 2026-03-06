@@ -310,6 +310,20 @@ export default function FinancasDashboard() {
 
   const today = new Date();
 
+  // Bills summary: month total & next 7 days
+  const billsMonthTotal = billsMonth.reduce((s: number, b: any) => s + Number(b.amount), 0);
+  const billsNext7 = useMemo(() => {
+    const now = new Date();
+    const in7 = new Date();
+    in7.setDate(in7.getDate() + 7);
+    return billsMonth
+      .filter((b: any) => {
+        const d = parseISO(b.due_date);
+        return d >= now && d <= in7;
+      });
+  }, [billsMonth]);
+  const billsNext7Total = billsNext7.reduce((s: number, b: any) => s + Number(b.amount), 0);
+
   return (
     <div className="space-y-6">
       {/* Header */}
