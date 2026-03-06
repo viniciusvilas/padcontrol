@@ -337,6 +337,12 @@ export default function FinancasContas() {
             <h1 className="text-2xl font-bold">Minhas Contas</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={() => {
+              setSaqueForm({ ...emptyTransferForm, category: "Saque de Plataforma" });
+              setSaqueDialog(true);
+            }}>
+              <ArrowDownToLine className="h-4 w-4 mr-2" />Registrar Saque de Plataforma
+            </Button>
             <Button variant="outline" onClick={() => { setTransferForm(emptyTransferForm); setTransferDialog(true); }}>
               <ArrowRightLeft className="h-4 w-4 mr-2" />Registrar Transferência
             </Button>
