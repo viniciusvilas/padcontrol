@@ -110,7 +110,23 @@ export default function FinancasDashboard() {
     enabled: !!user,
   });
 
-  // PAD revenue (paid orders from pedidos table for selected month)
+  // Budgets for the month
+  const { data: budgets = [] } = useQuery({
+    queryKey: ["fin-budgets", user?.id, selectedMonth],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("finance_budgets")
+        .select("*")
+        .eq("user_id", user!.id)
+        .eq("month", format(monthStart, "yyyy-MM-dd"))
+        .order("category");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+
   const { data: pedidosPagos = [] } = useQuery({
     queryKey: ["pad-revenue", user?.id, selectedMonth],
     queryFn: async () => {
