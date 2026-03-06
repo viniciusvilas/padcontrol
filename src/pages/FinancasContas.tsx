@@ -364,8 +364,8 @@ export default function FinancasContas() {
                   <Badge variant="outline" className="text-xs">{acc.type.toUpperCase()}</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">{acc.owner}</p>
-                <p className={`text-xl font-bold ${acc.computedBalance >= 0 ? "text-success" : "text-destructive"}`}>
-                  R$ {acc.computedBalance.toFixed(2)}
+                <p className={`text-xl font-bold ${(acc.computedBalance ?? 0) >= 0 ? "text-success" : "text-destructive"}`}>
+                  R$ {(acc.computedBalance ?? 0).toFixed(2)}
                 </p>
                 <div className="flex gap-1 pt-1">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
@@ -409,8 +409,8 @@ export default function FinancasContas() {
                       <Badge variant="outline" className="text-xs">PLATAFORMA</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">{acc.owner}</p>
-                    <p className={`text-xl font-bold ${acc.computedBalance >= 0 ? "text-success" : "text-destructive"}`}>
-                      R$ {acc.computedBalance.toFixed(2)}
+                    <p className={`text-xl font-bold ${(acc.computedBalance ?? 0) >= 0 ? "text-success" : "text-destructive"}`}>
+                      R$ {(acc.computedBalance ?? 0).toFixed(2)}
                     </p>
                     <div className="flex gap-1 pt-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
