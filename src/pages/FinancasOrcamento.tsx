@@ -3,6 +3,7 @@ import { PieChart as PieChartIcon, Plus, Pencil, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFinanceCategories } from "@/hooks/useFinanceCategories";
 import { format, subMonths, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,7 @@ function buildMonthOptions() {
 export default function FinancasOrcamento() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { filtered: expenseCategories } = useFinanceCategories("expense");
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
   const monthOptions = useMemo(buildMonthOptions, []);
   const [dialogOpen, setDialogOpen] = useState(false);
