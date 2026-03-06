@@ -185,7 +185,7 @@ export default function FinancasTransacoes() {
       // Fetch all existing imported notes for duplicate check
       const { data: existing, error: e2 } = await supabase
         .from("finance_transactions")
-        .select("notes")
+        .select("id, notes")
         .eq("user_id", user!.id)
         .eq("category", "Pay After Delivery");
       if (e2) throw e2;
