@@ -1,14 +1,14 @@
 import { useState, useMemo } from "react";
-import { LineChart as LineChartIcon, DollarSign, Package, TrendingUp, Clock } from "lucide-react";
+import { LineChart as LineChartIcon, DollarSign, Package, TrendingUp, Clock, CalendarDays } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinanceAccounts } from "@/hooks/useFinanceAccounts";
-import { format, parseISO, startOfMonth, endOfMonth, differenceInCalendarDays, startOfDay } from "date-fns";
+import { useFinanceReceivables } from "@/hooks/useFinanceReceivables";
+import { format, parseISO, startOfMonth, endOfMonth, differenceInCalendarDays, startOfDay, startOfWeek, endOfWeek, addWeeks, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
@@ -21,14 +21,25 @@ const chartConfig: ChartConfig = {
   projecao: { label: "Projeção (Pendentes)", color: "hsl(var(--primary))" },
 };
 
+const weeklyChartConfig: ChartConfig = {
+  consultoria: { label: "Consultorias/Vendas", color: "hsl(245 58% 70%)" },
+  pad: { label: "Pedidos PAD", color: "hsl(var(--success))" },
+};
+
 const fmt = (v: number) =>
   `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+function getWeekLabel(start: Date): string {
+  const end = endOfWeek(start, { weekStartsOn: 1 });
+  return `${format(start, "dd")}–${format(end, "dd MMM", { locale: ptBR })}`;
+}
 
 export default function FinancasProjecoes() {
   const { user } = useAuth();
   const hoje = startOfDay(new Date());
   const { accounts, activeAccounts } = useFinanceAccounts();
   const [accountFilter, setAccountFilter] = useState("all");
+  const { allInstallments } = useFinanceReceivables();
 
   const { data: pedidos = [], isLoading } = useQuery({
     queryKey: ["fin-projecoes-pedidos", user?.id],
@@ -41,7 +52,6 @@ export default function FinancasProjecoes() {
     enabled: !!user,
   });
 
-  // Fetch transactions to filter by account
   const { data: transactions = [] } = useQuery({
     queryKey: ["fin-transactions-all", user?.id],
     queryFn: async () => {
@@ -54,17 +64,14 @@ export default function FinancasProjecoes() {
     enabled: !!user,
   });
 
-  // Filtered transactions by account
   const filteredTx = useMemo(() => {
     if (accountFilter === "all") return transactions;
     return transactions.filter((t: any) => t.account_id === accountFilter);
   }, [transactions, accountFilter]);
 
-  // Pedidos pagos = receita confirmada
   const pagos = useMemo(() => pedidos.filter((p) => p.pedido_pago), [pedidos]);
   const receitaTotal = useMemo(() => {
     if (accountFilter === "all") return pagos.reduce((s, p) => s + Number(p.valor), 0);
-    // If filtering by account, use transactions instead
     return filteredTx.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
   }, [pagos, accountFilter, filteredTx]);
 
@@ -81,14 +88,12 @@ export default function FinancasProjecoes() {
       .reduce((s: number, t: any) => s + Number(t.amount), 0);
   }, [pagos, hoje, accountFilter, filteredTx]);
 
-  // Pedidos pendentes
   const pendentes = useMemo(
     () => pedidos.filter((p) => !p.pedido_chegou && !p.pedido_pago && !p.pedido_perdido),
     [pedidos]
   );
   const valorPendente = useMemo(() => pendentes.reduce((s, p) => s + Number(p.valor), 0), [pendentes]);
 
-  // Cenários
   const cenarios = useMemo(() => {
     if (pendentes.length === 0) return [];
     const totalFrete = pendentes.reduce((s, p) => s + (p.plataforma === "Five" ? FRETE_FIVE : 0), 0);
@@ -118,6 +123,43 @@ export default function FinancasProjecoes() {
       return parseISO(a.previsao_entrega).getTime() - parseISO(b.previsao_entrega).getTime();
     }),
     [pendentes]
+  );
+
+  // Weekly forecast (current + next 4 weeks)
+  const weeklyForecast = useMemo(() => {
+    const weeks: { label: string; consultoria: number; consultoriaCount: number; pad: number; padCount: number }[] = [];
+    const thisWeekStart = startOfWeek(hoje, { weekStartsOn: 1 });
+
+    for (let i = 0; i < 5; i++) {
+      const wStart = addWeeks(thisWeekStart, i);
+      const wEnd = endOfWeek(wStart, { weekStartsOn: 1 });
+
+      const weekInstallments = allInstallments.filter((inst) => {
+        if (inst.status === "paid") return false;
+        const d = parseISO(inst.due_date);
+        return d >= wStart && d <= wEnd;
+      });
+
+      const weekPedidos = pendentes.filter((p) => {
+        if (!p.previsao_entrega) return false;
+        const payDate = addDays(parseISO(p.previsao_entrega), 3);
+        return payDate >= wStart && payDate <= wEnd;
+      });
+
+      weeks.push({
+        label: getWeekLabel(wStart),
+        consultoria: weekInstallments.reduce((s, inst) => s + Number(inst.amount), 0),
+        consultoriaCount: weekInstallments.length,
+        pad: weekPedidos.reduce((s, p) => s + Number(p.valor), 0),
+        padCount: weekPedidos.length,
+      });
+    }
+    return weeks;
+  }, [hoje, allInstallments, pendentes]);
+
+  const weeklyChartData = useMemo(() =>
+    weeklyForecast.map((w) => ({ nome: w.label, consultoria: w.consultoria, pad: w.pad })),
+    [weeklyForecast]
   );
 
   if (isLoading) return <div className="text-muted-foreground p-6">Carregando projeções...</div>;
@@ -170,6 +212,98 @@ export default function FinancasProjecoes() {
             </ChartContainer>
           </CardContent>
         </Card>
+      )}
+
+      {/* ═══ WEEKLY FORECAST ═══ */}
+      {weeklyForecast.some((w) => w.consultoria > 0 || w.pad > 0) && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-primary" /> Previsão de Recebimentos por Semana
+          </h2>
+
+          {/* Next week highlight */}
+          {weeklyForecast.length >= 2 && (weeklyForecast[1].consultoria > 0 || weeklyForecast[1].pad > 0) && (
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-xs text-muted-foreground">📅 Próxima semana ({weeklyForecast[1].label})</p>
+                <p className="text-2xl font-bold text-primary mt-1">
+                  {fmt(weeklyForecast[1].consultoria + weeklyForecast[1].pad)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Consultorias: {fmt(weeklyForecast[1].consultoria)} · PAD: <strong>{fmt(weeklyForecast[1].pad)}</strong> ({weeklyForecast[1].padCount} pedidos)
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Weekly stacked chart */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Recebimentos Semanais — Consultoria vs PAD</CardTitle></CardHeader>
+            <CardContent>
+              <ChartContainer config={weeklyChartConfig} className="h-[280px] w-full">
+                <BarChart data={weeklyChartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="nome" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="consultoria" fill="var(--color-consultoria)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="pad" fill="var(--color-pad)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          {/* Side by side tables */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader><CardTitle className="text-base">📋 Consultorias / Vendas a Prazo</CardTitle></CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Semana</TableHead>
+                      <TableHead className="text-right">Total Esperado</TableHead>
+                      <TableHead className="text-right">Parcelas</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {weeklyForecast.map((w, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">{w.label}</TableCell>
+                        <TableCell className="text-right">{fmt(w.consultoria)}</TableCell>
+                        <TableCell className="text-right">{w.consultoriaCount}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base">📦 Pedidos PAD</CardTitle></CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Semana</TableHead>
+                      <TableHead className="text-right">Total Esperado</TableHead>
+                      <TableHead className="text-right">Pedidos</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {weeklyForecast.map((w, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">{w.label}</TableCell>
+                        <TableCell className="text-right font-bold">{fmt(w.pad)}</TableCell>
+                        <TableCell className="text-right">{w.padCount}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       )}
 
       {/* Cenários */}
