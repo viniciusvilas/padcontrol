@@ -109,6 +109,74 @@ export default function FinancasDashboard() {
     enabled: !!user,
   });
 
+  // PAD revenue (paid orders from pedidos table for selected month)
+  const { data: pedidosPagos = [] } = useQuery({
+    queryKey: ["pad-revenue", user?.id, selectedMonth],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pedidos")
+        .select("valor")
+        .eq("user_id", user!.id)
+        .eq("pedido_pago", true)
+        .gte("data", format(monthStart, "yyyy-MM-dd"))
+        .lte("data", format(monthEnd, "yyyy-MM-dd"));
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Auto-create PAD income source based on last 3 months average
+  const { data: last3mPedidos = [] } = useQuery({
+    queryKey: ["pad-avg-3m", user?.id],
+    queryFn: async () => {
+      const threeMonthsAgo = format(startOfMonth(subMonths(new Date(), 3)), "yyyy-MM-dd");
+      const { data, error } = await supabase
+        .from("pedidos")
+        .select("valor")
+        .eq("user_id", user!.id)
+        .eq("pedido_pago", true)
+        .gte("data", threeMonthsAgo);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: existingPadSource } = useQuery({
+    queryKey: ["pad-income-source", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("finance_income_sources")
+        .select("id")
+        .eq("user_id", user!.id)
+        .eq("name", "Pay After Delivery")
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    if (!user || existingPadSource !== null || last3mPedidos.length === 0) return;
+    const avg = last3mPedidos.reduce((s: number, p: any) => s + Number(p.valor), 0) / 3;
+    if (avg > 0) {
+      supabase.from("finance_income_sources").insert({
+        user_id: user.id,
+        name: "Pay After Delivery",
+        expected_monthly_amount: Math.round(avg * 100) / 100,
+        is_active: true,
+        notes: "Criado automaticamente com base na média dos últimos 3 meses de vendas.",
+      }).then(() => {
+        qc.invalidateQueries({ queryKey: ["fin-income-sources"] });
+        qc.invalidateQueries({ queryKey: ["pad-income-source"] });
+      });
+    }
+  }, [user, existingPadSource, last3mPedidos, qc]);
+
+  const padRevenue = pedidosPagos.reduce((s: number, p: any) => s + Number(p.valor), 0);
+
   // Metrics
   const receitas = transactions.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
   const despesas = transactions.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
