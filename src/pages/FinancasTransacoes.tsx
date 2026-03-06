@@ -190,20 +190,26 @@ export default function FinancasTransacoes() {
         .eq("category", "Pay After Delivery");
       if (e2) throw e2;
 
-      const importedIds = new Set((existing || []).map((t: any) => t.notes).filter(Boolean));
+      // Build map of existing imported transactions for duplicate check & date update
+      const existingMap = new Map<string, string>();
+      (existing || []).forEach((t: any) => { if (t.notes && t.id) existingMap.set(t.notes, t.id); });
 
       const toInsert: any[] = [];
+      const toUpdate: { id: string; date: string }[] = [];
       let skipped = 0;
 
       for (const o of paidOrders) {
         const ref = `pedido:${o.id}`;
-        if (importedIds.has(ref)) {
+        const correctDate = o.data_entrega || o.data;
+        if (existingMap.has(ref)) {
+          // Update date of already-imported transaction to use delivery date
+          toUpdate.push({ id: existingMap.get(ref)!, date: correctDate });
           skipped++;
           continue;
         }
         toInsert.push({
           user_id: user!.id,
-          date: o.data,
+          date: correctDate,
           description: `Venda: ${o.cliente} - ${o.produto}`,
           amount: Number(o.valor),
           type: "income" as const,
@@ -212,6 +218,11 @@ export default function FinancasTransacoes() {
           is_recurring: false,
           notes: ref,
         });
+      }
+
+      // Update dates of existing transactions
+      for (const u of toUpdate) {
+        await supabase.from("finance_transactions").update({ date: u.date }).eq("id", u.id);
       }
 
       // Insert in batches of 50
