@@ -63,6 +63,8 @@ export default function FinancasContas() {
   const [distDialog, setDistDialog] = useState(false);
   const [applyDialog, setApplyDialog] = useState(false);
   const [applyAmount, setApplyAmount] = useState("");
+  const [saqueDialog, setSaqueDialog] = useState(false);
+  const [saqueForm, setSaqueForm] = useState<TransferForm>({ ...emptyTransferForm, category: "Saque de Plataforma" });
 
   // ── Queries ──
   const { data: transfers = [] } = useQuery({
@@ -106,7 +108,13 @@ export default function FinancasContas() {
     return m;
   }, [accounts]);
 
-  const totalBalance = accounts.filter((a) => a.is_active).reduce((s, a) => s + Number(a.balance), 0);
+  const bankAccounts = accounts.filter((a) => isBankAccount(a));
+  const platformAccounts = accounts.filter((a) => isPlatformAccount(a));
+  const activeBankAccounts = bankAccounts.filter((a) => a.is_active);
+  const activePlatformAccounts = platformAccounts.filter((a) => a.is_active);
+  const totalBankBalance = activeBankAccounts.reduce((s, a) => s + Number(a.balance), 0);
+  const totalPlatformBalance = activePlatformAccounts.reduce((s, a) => s + Number(a.balance), 0);
+  const totalBalance = totalBankBalance;
 
   const groupedEnvelopes = useMemo(() => {
     const map = new Map<string, Envelope[]>();
