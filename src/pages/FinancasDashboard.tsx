@@ -3,7 +3,7 @@ import { Wallet, TrendingUp, TrendingDown, Scale, Landmark, AlertTriangle, Arrow
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useFinanceAccounts } from "@/hooks/useFinanceAccounts";
+import { useFinanceAccounts, isPlatformAccount, isBankAccount } from "@/hooks/useFinanceAccounts";
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, differenceInCalendarDays, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -214,8 +214,11 @@ export default function FinancasDashboard() {
   const despesas = transactions.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
   const saldo = receitas - despesas;
 
-  // Account totals
-  const totalBalance = activeAccounts.reduce((s, a) => s + Number(a.balance), 0);
+  // Account totals - separate bank from platform
+  const activeBankAccounts = activeAccounts.filter(isBankAccount);
+  const activePlatformAccounts = activeAccounts.filter(isPlatformAccount);
+  const totalBalance = activeBankAccounts.reduce((s, a) => s + Number(a.balance), 0);
+  const totalPlatformBalance = activePlatformAccounts.reduce((s, a) => s + Number(a.balance), 0);
   const totalAllocated = (envelopes as any[]).filter((e: any) => e.is_active).reduce((s: number, e: any) => s + Number(e.allocated_amount), 0);
   const dinheiroLivre = totalBalance - totalAllocated;
 
@@ -308,7 +311,7 @@ export default function FinancasDashboard() {
       <div className="space-y-4">
         {/* Mini-cards per account + total + free money */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-          {activeAccounts.map((acc) => (
+          {activeBankAccounts.map((acc) => (
             <Card key={acc.id} className="relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: acc.color }} />
               <CardContent className="pt-4 pb-3">
@@ -324,12 +327,12 @@ export default function FinancasDashboard() {
             </Card>
           ))}
 
-          {/* Saldo Consolidado */}
+          {/* Saldo Consolidado (bank only) */}
           <Link to="/financas/contas">
             <Card className="border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer h-full">
               <CardContent className="pt-4 pb-3">
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Building2 className="h-3 w-3" /> Saldo Consolidado
+                  <Building2 className="h-3 w-3" /> Saldo Consolidado (Bancário)
                 </p>
                 <p className={`text-lg font-bold mt-1 ${totalBalance >= 0 ? "text-success" : "text-destructive"}`}>
                   R$ {totalBalance.toFixed(2)}
@@ -347,10 +350,40 @@ export default function FinancasDashboard() {
               <p className={`text-lg font-bold mt-1 ${dinheiroLivre >= 0 ? "text-success" : "text-destructive"}`}>
                 R$ {dinheiroLivre.toFixed(2)}
               </p>
-              <p className="text-[10px] text-muted-foreground">Saldo - Envelopes alocados</p>
+              <p className="text-[10px] text-muted-foreground">Saldo bancário - Envelopes alocados</p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Platform accounts section */}
+        {activePlatformAccounts.length > 0 && (
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            {activePlatformAccounts.map((acc) => (
+              <Card key={acc.id} className="relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: acc.color }} />
+                <CardContent className="pt-4 pb-3">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: acc.color }} />
+                    {acc.name}
+                    <Badge variant="outline" className="text-[9px] ml-auto">PLATAFORMA</Badge>
+                  </p>
+                  <p className={`text-lg font-bold mt-1 ${Number(acc.balance) >= 0 ? "text-success" : "text-destructive"}`}>
+                    R$ {Number(acc.balance).toFixed(2)}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+            <Card className="border-warning/30 bg-warning/5">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-xs text-muted-foreground font-medium">💸 Total a Sacar</p>
+                <p className="text-lg font-bold text-warning mt-1">
+                  R$ {totalPlatformBalance.toFixed(2)}
+                </p>
+                <p className="text-[10px] text-muted-foreground">Dinheiro ainda nas plataformas</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
 
       {/* Budget/Envelope alerts banner */}

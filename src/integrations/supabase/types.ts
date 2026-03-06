@@ -594,7 +594,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      finance_account_type: "pj" | "pf"
+      finance_account_type: "pj" | "pf" | "plataforma"
       finance_bill_status: "pending" | "paid" | "overdue"
       finance_category_type: "income" | "expense" | "both"
       finance_recurrence_interval: "monthly" | "weekly" | "yearly"
@@ -726,7 +726,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      finance_account_type: ["pj", "pf"],
+      finance_account_type: ["pj", "pf", "plataforma"],
       finance_bill_status: ["pending", "paid", "overdue"],
       finance_category_type: ["income", "expense", "both"],
       finance_recurrence_interval: ["monthly", "weekly", "yearly"],

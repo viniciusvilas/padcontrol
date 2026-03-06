@@ -1,12 +1,12 @@
 import { useState, useMemo } from "react";
 import {
   Building2, Plus, Pencil, Power, ArrowRightLeft, Wallet2,
-  Settings2, Play, Trash2
+  Settings2, Play, Trash2, ArrowDownToLine
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useFinanceAccounts, FinanceAccount } from "@/hooks/useFinanceAccounts";
+import { useFinanceAccounts, FinanceAccount, isPlatformAccount, isBankAccount } from "@/hooks/useFinanceAccounts";
 import { format, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,7 @@ interface Envelope {
 interface DistRule { id: string; user_id: string; envelope_id: string; percentage: number; updated_at: string; }
 
 interface AccountForm {
-  id?: string; name: string; type: "pj" | "pf"; owner: string; color: string; balance: string;
+  id?: string; name: string; type: "pj" | "pf" | "plataforma"; owner: string; color: string; balance: string;
 }
 interface TransferForm {
   from_account_id: string; to_account_id: string; amount: string;
@@ -63,6 +63,8 @@ export default function FinancasContas() {
   const [distDialog, setDistDialog] = useState(false);
   const [applyDialog, setApplyDialog] = useState(false);
   const [applyAmount, setApplyAmount] = useState("");
+  const [saqueDialog, setSaqueDialog] = useState(false);
+  const [saqueForm, setSaqueForm] = useState<TransferForm>({ ...emptyTransferForm, category: "Saque de Plataforma" });
 
   // ── Queries ──
   const { data: transfers = [] } = useQuery({
@@ -106,7 +108,13 @@ export default function FinancasContas() {
     return m;
   }, [accounts]);
 
-  const totalBalance = accounts.filter((a) => a.is_active).reduce((s, a) => s + Number(a.balance), 0);
+  const bankAccounts = accounts.filter((a) => isBankAccount(a));
+  const platformAccounts = accounts.filter((a) => isPlatformAccount(a));
+  const activeBankAccounts = bankAccounts.filter((a) => a.is_active);
+  const activePlatformAccounts = platformAccounts.filter((a) => a.is_active);
+  const totalBankBalance = activeBankAccounts.reduce((s, a) => s + Number(a.balance), 0);
+  const totalPlatformBalance = activePlatformAccounts.reduce((s, a) => s + Number(a.balance), 0);
+  const totalBalance = totalBankBalance;
 
   const groupedEnvelopes = useMemo(() => {
     const map = new Map<string, Envelope[]>();
@@ -226,6 +234,31 @@ export default function FinancasContas() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["finance-transfers"] }); toast.success("Transferência excluída!"); },
   });
 
+  const saveSaqueMutation = useMutation({
+    mutationFn: async (f: TransferForm) => {
+      if (f.from_account_id === f.to_account_id) throw new Error("Contas devem ser diferentes");
+      const fromAcc = accountMap.get(f.from_account_id);
+      const toAcc = accountMap.get(f.to_account_id);
+      if (!fromAcc || !isPlatformAccount(fromAcc)) throw new Error("Conta origem deve ser uma plataforma");
+      if (!toAcc || isPlatformAccount(toAcc)) throw new Error("Conta destino deve ser uma conta bancária");
+      const amount = Number(f.amount);
+      const { error } = await supabase.from("finance_transfers").insert({
+        user_id: user!.id, from_account_id: f.from_account_id, to_account_id: f.to_account_id,
+        amount, date: f.date, description: f.description || "Saque de plataforma", category: "Saque de Plataforma",
+      });
+      if (error) throw error;
+      await supabase.from("finance_accounts").update({ balance: Number(fromAcc.balance) - amount }).eq("id", f.from_account_id);
+      await supabase.from("finance_accounts").update({ balance: Number(toAcc.balance) + amount }).eq("id", f.to_account_id);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["finance-transfers"] });
+      qc.invalidateQueries({ queryKey: ["finance-accounts"] });
+      setSaqueDialog(false); setSaqueForm({ ...emptyTransferForm, category: "Saque de Plataforma" });
+      toast.success("Saque registrado!");
+    },
+    onError: (e: any) => toast.error(e.message || "Erro ao registrar saque."),
+  });
+
   const saveEnvelopeMutation = useMutation({
     mutationFn: async (f: EnvelopeForm) => {
       const payload = {
@@ -304,6 +337,12 @@ export default function FinancasContas() {
             <h1 className="text-2xl font-bold">Minhas Contas</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={() => {
+              setSaqueForm({ ...emptyTransferForm, category: "Saque de Plataforma" });
+              setSaqueDialog(true);
+            }}>
+              <ArrowDownToLine className="h-4 w-4 mr-2" />Registrar Saque de Plataforma
+            </Button>
             <Button variant="outline" onClick={() => { setTransferForm(emptyTransferForm); setTransferDialog(true); }}>
               <ArrowRightLeft className="h-4 w-4 mr-2" />Registrar Transferência
             </Button>
@@ -313,9 +352,9 @@ export default function FinancasContas() {
           </div>
         </div>
 
-        {/* Saldo Total */}
+        {/* Saldo Total Bancário */}
         <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Saldo Total Consolidado</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Saldo Total Contas Bancárias</CardTitle></CardHeader>
           <CardContent>
             <div className={`text-3xl font-bold ${totalBalance >= 0 ? "text-success" : "text-destructive"}`}>
               R$ {totalBalance.toFixed(2)}
@@ -323,9 +362,9 @@ export default function FinancasContas() {
           </CardContent>
         </Card>
 
-        {/* Account Cards */}
+        {/* Bank Account Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {accounts.map((acc) => (
+          {bankAccounts.map((acc) => (
             <Card key={acc.id} className={`relative overflow-hidden ${!acc.is_active ? "opacity-50" : ""}`}>
               <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: acc.color }} />
               <CardContent className="pt-5 space-y-3">
@@ -352,6 +391,53 @@ export default function FinancasContas() {
             </Card>
           ))}
         </div>
+
+        {/* ═══ SALDO EM PLATAFORMAS ═══ */}
+        {platformAccounts.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <ArrowDownToLine className="h-5 w-5 text-primary" /> Saldo em Plataformas
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Total a Sacar */}
+              <Card className="border-warning/30 bg-warning/5">
+                <CardContent className="pt-4 pb-3">
+                  <p className="text-xs text-muted-foreground font-medium">💸 Total a Sacar</p>
+                  <p className="text-2xl font-bold text-warning mt-1">
+                    R$ {totalPlatformBalance.toFixed(2)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">Dinheiro ainda nas plataformas</p>
+                </CardContent>
+              </Card>
+              {platformAccounts.map((acc) => (
+                <Card key={acc.id} className={`relative overflow-hidden ${!acc.is_active ? "opacity-50" : ""}`}>
+                  <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: acc.color }} />
+                  <CardContent className="pt-5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-base">{acc.name}</h3>
+                      <Badge variant="outline" className="text-xs">PLATAFORMA</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{acc.owner}</p>
+                    <p className={`text-xl font-bold ${Number(acc.balance) >= 0 ? "text-success" : "text-destructive"}`}>
+                      R$ {Number(acc.balance).toFixed(2)}
+                    </p>
+                    <div className="flex gap-1 pt-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                        setAccountForm({ id: acc.id, name: acc.name, type: acc.type, owner: acc.owner, color: acc.color, balance: String(acc.balance) });
+                        setAccountDialog(true);
+                      }}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className={`h-8 w-8 ${acc.is_active ? "text-success" : "text-muted-foreground"}`} onClick={() => toggleAccountMutation.mutate(acc)}>
+                        <Power className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Transfer History */}
         {transfers.length > 0 && (
@@ -524,6 +610,7 @@ export default function FinancasContas() {
                   <SelectContent>
                     <SelectItem value="pj">PJ</SelectItem>
                     <SelectItem value="pf">PF</SelectItem>
+                    <SelectItem value="plataforma">Plataforma</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -757,6 +844,65 @@ export default function FinancasContas() {
               </Button>
             </DialogFooter>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Saque de Plataforma Dialog */}
+      <Dialog open={saqueDialog} onOpenChange={setSaqueDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Registrar Saque de Plataforma</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); saveSaqueMutation.mutate(saqueForm); }} className="space-y-4">
+            <div>
+              <Label>Conta origem (Plataforma)</Label>
+              <Select value={saqueForm.from_account_id} onValueChange={(v) => setSaqueForm({ ...saqueForm, from_account_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione a plataforma" /></SelectTrigger>
+                <SelectContent>
+                  {activePlatformAccounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: a.color }} />
+                        {a.name} (R$ {Number(a.balance).toFixed(2)})
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Conta destino (Bancária)</Label>
+              <Select value={saqueForm.to_account_id} onValueChange={(v) => setSaqueForm({ ...saqueForm, to_account_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione a conta bancária" /></SelectTrigger>
+                <SelectContent>
+                  {activeBankAccounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: a.color }} />
+                        {a.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Valor</Label>
+                <Input type="number" step="0.01" min="0.01" value={saqueForm.amount} onChange={(e) => setSaqueForm({ ...saqueForm, amount: e.target.value })} required />
+              </div>
+              <div>
+                <Label>Data</Label>
+                <Input type="date" value={saqueForm.date} onChange={(e) => setSaqueForm({ ...saqueForm, date: e.target.value })} required />
+              </div>
+            </div>
+            <div>
+              <Label>Descrição (opcional)</Label>
+              <Input value={saqueForm.description} onChange={(e) => setSaqueForm({ ...saqueForm, description: e.target.value })} placeholder="Ex: Saque quinzenal Keed" />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setSaqueDialog(false)}>Cancelar</Button>
+              <Button type="submit" disabled={saveSaqueMutation.isPending}>{saveSaqueMutation.isPending ? "Salvando..." : "Registrar Saque"}</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

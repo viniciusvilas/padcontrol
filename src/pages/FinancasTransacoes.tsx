@@ -186,9 +186,11 @@ export default function FinancasTransacoes() {
   // Import sales from pedidos
   const importSalesMutation = useMutation({
     mutationFn: async () => {
-      // Find PJ Esposa account for auto-linking
-      const pjEsposa = allAccounts.find((a) => a.name.toLowerCase().includes("pj esposa"));
-      const pjEsposaId = pjEsposa?.id || null;
+      // Find platform accounts for auto-linking by pedido.plataforma
+      const keedAccount = allAccounts.find((a) => a.name.toLowerCase().includes("plataforma keed"));
+      const fiveAccount = allAccounts.find((a) => a.name.toLowerCase().includes("plataforma five"));
+      // Fallback to PJ Esposa if no platform accounts exist
+      const fallbackAccount = allAccounts.find((a) => a.name.toLowerCase().includes("pj esposa"));
 
       const { data: paidOrders, error: e1 } = await supabase
         .from("pedidos").select("*")
@@ -216,6 +218,17 @@ export default function FinancasTransacoes() {
           skipped++;
           continue;
         }
+        // Route to platform account based on pedido.plataforma field
+        let targetAccountId: string | null = null;
+        const plataforma = (o.plataforma || "").toLowerCase();
+        if (plataforma.includes("keed") && keedAccount) {
+          targetAccountId = keedAccount.id;
+        } else if (plataforma.includes("five") && fiveAccount) {
+          targetAccountId = fiveAccount.id;
+        } else {
+          targetAccountId = fallbackAccount?.id || null;
+        }
+
         toInsert.push({
           user_id: user!.id,
           date: correctDate,
@@ -226,7 +239,7 @@ export default function FinancasTransacoes() {
           source: "Módulo de Vendas",
           is_recurring: false,
           notes: ref,
-          account_id: pjEsposaId,
+          account_id: targetAccountId,
         });
       }
 

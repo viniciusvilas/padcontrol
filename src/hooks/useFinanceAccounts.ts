@@ -6,13 +6,16 @@ export interface FinanceAccount {
   id: string;
   user_id: string;
   name: string;
-  type: "pj" | "pf";
+  type: "pj" | "pf" | "plataforma";
   owner: string;
   balance: number;
   color: string;
   is_active: boolean;
   created_at: string;
 }
+
+export const isPlatformAccount = (acc: FinanceAccount) => acc.type === "plataforma";
+export const isBankAccount = (acc: FinanceAccount) => acc.type !== "plataforma";
 
 export function useFinanceAccounts() {
   const { user } = useAuth();
