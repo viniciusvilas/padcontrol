@@ -1,6 +1,7 @@
 import {
   Package, Clock, Phone, PhoneCall, AlertTriangle, CheckCircle, XCircle,
-  Megaphone, LayoutDashboard, TrendingUp, Trophy, LogOut, Download
+  Megaphone, LayoutDashboard, TrendingUp, Trophy, LogOut, Download,
+  Wallet, ArrowLeftRight, Receipt, LineChart
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -35,6 +36,14 @@ const menuGeral = [
   { title: "Projeção", url: "/projecao", icon: TrendingUp },
   { title: "Nível", url: "/nivel", icon: Trophy },
   { title: "Instalar App", url: "/install", icon: Download },
+];
+
+const menuFinancas = [
+  { title: "Dashboard", url: "/financas", icon: Wallet },
+  { title: "Transações", url: "/financas/transacoes", icon: ArrowLeftRight },
+  { title: "Contas a Pagar", url: "/financas/contas-a-pagar", icon: Receipt },
+  { title: "Investimentos", url: "/financas/investimentos", icon: TrendingUp },
+  { title: "Projeções", url: "/financas/projecoes", icon: LineChart },
 ];
 
 export function AppSidebar() {
@@ -87,6 +96,29 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuGeral.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={item.url}
+                      end
+                      className="hover:bg-sidebar-accent/50"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    >
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Finanças Pessoais</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {menuFinancas.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
