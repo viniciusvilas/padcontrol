@@ -263,6 +263,19 @@ export default function FinancasDashboard() {
         </Select>
       </div>
 
+      {/* Budget overspend banner */}
+      {overspentCategories.length > 0 && (
+        <div className="flex items-center gap-3 p-4 rounded-lg border border-destructive/50 bg-destructive/5">
+          <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0" />
+          <div>
+            <p className="font-medium text-sm text-destructive">Orçamento estourado!</p>
+            <p className="text-xs text-muted-foreground">
+              {overspentCategories.map((b: any) => b.category).join(", ")} — ultrapassaram o limite definido para este mês.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Metric cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
