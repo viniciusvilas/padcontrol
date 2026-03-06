@@ -1,23 +1,27 @@
 
 
-## Linhas alternadas com tons de roxo nas tabelas de pedidos
+## Ajustar taxa de inadimplência
 
-### O que será feito
-Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
+### Mudança em `src/pages/Dashboard.tsx`
 
-### Abordagem
-A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
+A lógica atual exclui pedidos perdidos. A nova lógica deve contar como inadimplente qualquer pedido entregue e não pago que:
+- Tenha mais de 7 dias desde a entrega (independente de ser perdido ou não), **OU**
+- Esteja marcado como perdido
 
-1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
-2. **Perdidos.tsx**
-3. **Pagos.tsx**
-4. **Prioridade.tsx**
-5. **FaltaChamar.tsx**
-6. **PrestesAChegar.tsx**
+**De:**
+```ts
+const entreguesSemPgto = filtered.filter((p) => p.pedido_chegou && !p.pedido_pago && !p.pedido_perdido && p.data_entrega && differenceInCalendarDays(now, parseISO(p.data_entrega)) > 7);
+```
 
-### Classes CSS
-- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
-- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
+**Para:**
+```ts
+const inadimplentes = filtered.filter((p) =>
+  p.pedido_chegou && !p.pedido_pago && (
+    p.pedido_perdido ||
+    (p.data_entrega && differenceInCalendarDays(now, parseISO(p.data_entrega)) > 7)
+  )
+);
+```
 
-Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
+Atualizar referências de `entreguesSemPgto` para `inadimplentes` no cálculo da taxa e no subtitle do card.
 
