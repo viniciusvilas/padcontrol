@@ -67,6 +67,7 @@ export default function FinancasTransacoes() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [accountFilter, setAccountFilter] = useState("all");
   const [period, setPeriod] = useState("month");
   const [page, setPage] = useState(0);
 
@@ -94,7 +95,6 @@ export default function FinancasTransacoes() {
 
   const filtered = useMemo(() => {
     let result = transactions as any[];
-    // Period
     if (period !== "all") {
       const now = new Date();
       const cutoff = period === "month" ? startOfMonth(now) : subDays(now, Number(period));
@@ -102,12 +102,13 @@ export default function FinancasTransacoes() {
     }
     if (typeFilter !== "all") result = result.filter((t) => t.type === typeFilter);
     if (categoryFilter !== "all") result = result.filter((t) => t.category === categoryFilter);
+    if (accountFilter !== "all") result = result.filter((t) => t.account_id === accountFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((t) => t.description?.toLowerCase().includes(q));
     }
     return result;
-  }, [transactions, period, typeFilter, categoryFilter, search]);
+  }, [transactions, period, typeFilter, categoryFilter, accountFilter, search]);
 
   const totalReceitas = filtered.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
   const totalDespesas = filtered.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
@@ -185,24 +186,21 @@ export default function FinancasTransacoes() {
   // Import sales from pedidos
   const importSalesMutation = useMutation({
     mutationFn: async () => {
-      // Fetch ALL paid orders without limit
+      // Find PJ Esposa account for auto-linking
+      const pjEsposa = allAccounts.find((a) => a.name.toLowerCase().includes("pj esposa"));
+      const pjEsposaId = pjEsposa?.id || null;
+
       const { data: paidOrders, error: e1 } = await supabase
-        .from("pedidos")
-        .select("*")
-        .eq("user_id", user!.id)
-        .eq("pedido_pago", true);
+        .from("pedidos").select("*")
+        .eq("user_id", user!.id).eq("pedido_pago", true);
       if (e1) throw e1;
       if (!paidOrders || paidOrders.length === 0) return { imported: 0, skipped: 0 };
 
-      // Fetch all existing imported notes for duplicate check
       const { data: existing, error: e2 } = await supabase
-        .from("finance_transactions")
-        .select("id, notes")
-        .eq("user_id", user!.id)
-        .eq("category", "Pay After Delivery");
+        .from("finance_transactions").select("id, notes")
+        .eq("user_id", user!.id).eq("category", "Pay After Delivery");
       if (e2) throw e2;
 
-      // Build map of existing imported transactions for duplicate check & date update
       const existingMap = new Map<string, string>();
       (existing || []).forEach((t: any) => { if (t.notes && t.id) existingMap.set(t.notes, t.id); });
 
@@ -214,7 +212,6 @@ export default function FinancasTransacoes() {
         const ref = `pedido:${o.id}`;
         const correctDate = o.data_entrega || o.data;
         if (existingMap.has(ref)) {
-          // Update date of already-imported transaction to use delivery date
           toUpdate.push({ id: existingMap.get(ref)!, date: correctDate });
           skipped++;
           continue;
@@ -229,6 +226,7 @@ export default function FinancasTransacoes() {
           source: "Módulo de Vendas",
           is_recurring: false,
           notes: ref,
+          account_id: pjEsposaId,
         });
       }
 
@@ -318,6 +316,20 @@ export default function FinancasTransacoes() {
             {allCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={accountFilter} onValueChange={(v) => { setAccountFilter(v); setPage(0); }}>
+          <SelectTrigger className="w-40"><SelectValue placeholder="Conta" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas contas</SelectItem>
+            {allAccounts.map((a) => (
+              <SelectItem key={a.id} value={a.id}>
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: a.color }} />
+                  {a.name}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={period} onValueChange={(v) => { setPeriod(v); setPage(0); }}>
           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -336,7 +348,7 @@ export default function FinancasTransacoes() {
                   <TableHead>Data</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Categoria</TableHead>
-                  <TableHead>Fonte</TableHead>
+                  <TableHead>Conta</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead className="text-center">Recorrente</TableHead>
@@ -345,13 +357,22 @@ export default function FinancasTransacoes() {
               </TableHeader>
               <TableBody>
                 {paginated.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-10">Nenhuma transação encontrada.</TableCell></TableRow>
-                ) : paginated.map((tx: any, i: number) => (
+                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-10">Nenhuma transação encontrada.</TableCell></TableRow>
+                ) : paginated.map((tx: any, i: number) => {
+                  const txAcc = allAccounts.find((a) => a.id === tx.account_id);
+                  return (
                   <TableRow key={tx.id} className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}>
                     <TableCell className="whitespace-nowrap">{format(parseISO(tx.date), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="max-w-[200px] truncate">{tx.description}</TableCell>
                     <TableCell>{tx.category || "—"}</TableCell>
-                    <TableCell>{tx.source || "—"}</TableCell>
+                    <TableCell>
+                      {txAcc ? (
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: txAcc.color }} />
+                          <span className="text-xs">{txAcc.name}</span>
+                        </span>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={tx.type === "income" ? "default" : "destructive"} className={tx.type === "income" ? "bg-success text-success-foreground" : ""}>
                         {tx.type === "income" ? "Receita" : "Despesa"}
@@ -366,7 +387,8 @@ export default function FinancasTransacoes() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

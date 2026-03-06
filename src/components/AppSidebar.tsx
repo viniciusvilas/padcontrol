@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Package, Clock, Phone, PhoneCall, AlertTriangle, CheckCircle, XCircle,
   Megaphone, LayoutDashboard, TrendingUp, Trophy, LogOut, Download,
@@ -6,6 +7,8 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -19,6 +22,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const menuPedidos = [
   { title: "Todos os Pedidos", url: "/", icon: Package },
@@ -53,7 +57,25 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+
+  // Count envelopes below 20% of target for badge
+  const { data: envelopeAlertCount = 0 } = useQuery({
+    queryKey: ["envelope-alert-count", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("finance_envelopes")
+        .select("allocated_amount, target_amount")
+        .eq("user_id", user!.id)
+        .eq("is_active", true);
+      if (error) throw error;
+      return (data || []).filter(
+        (e: any) => Number(e.target_amount) > 0 && (Number(e.allocated_amount) / Number(e.target_amount)) < 0.2
+      ).length;
+    },
+    enabled: !!user,
+    staleTime: 60000,
+  });
 
   return (
     <Sidebar collapsible="icon">
@@ -118,7 +140,14 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Finanças Pessoais</SidebarGroupLabel>
+          <SidebarGroupLabel className="flex items-center gap-2">
+            Finanças Pessoais
+            {!collapsed && envelopeAlertCount > 0 && (
+              <Badge variant="destructive" className="text-[10px] px-1.5 py-0 ml-auto">
+                {envelopeAlertCount}
+              </Badge>
+            )}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuFinancas.map((item) => (
