@@ -1,12 +1,12 @@
 import { useState, useMemo } from "react";
 import {
   Building2, Plus, Pencil, Power, ArrowRightLeft, Wallet2,
-  Settings2, Play, Trash2
+  Settings2, Play, Trash2, ArrowDownToLine
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useFinanceAccounts, FinanceAccount } from "@/hooks/useFinanceAccounts";
+import { useFinanceAccounts, FinanceAccount, isPlatformAccount, isBankAccount } from "@/hooks/useFinanceAccounts";
 import { format, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,7 @@ interface Envelope {
 interface DistRule { id: string; user_id: string; envelope_id: string; percentage: number; updated_at: string; }
 
 interface AccountForm {
-  id?: string; name: string; type: "pj" | "pf"; owner: string; color: string; balance: string;
+  id?: string; name: string; type: "pj" | "pf" | "plataforma"; owner: string; color: string; balance: string;
 }
 interface TransferForm {
   from_account_id: string; to_account_id: string; amount: string;
