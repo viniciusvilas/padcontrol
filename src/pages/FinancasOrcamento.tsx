@@ -3,6 +3,7 @@ import { PieChart as PieChartIcon, Plus, Pencil, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFinanceCategories } from "@/hooks/useFinanceCategories";
 import { format, subMonths, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,7 @@ function buildMonthOptions() {
 export default function FinancasOrcamento() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { filtered: expenseCategories } = useFinanceCategories("expense");
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
   const monthOptions = useMemo(buildMonthOptions, []);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -82,26 +84,8 @@ export default function FinancasOrcamento() {
     enabled: !!user,
   });
 
-  // All categories from transactions (for the dropdown)
-  const { data: allTransactions = [] } = useQuery({
-    queryKey: ["fin-all-categories", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("finance_transactions")
-        .select("category")
-        .eq("user_id", user!.id)
-        .neq("category", "");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
-
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    allTransactions.forEach((t: any) => { if (t.category) set.add(t.category); });
-    return Array.from(set).sort();
-  }, [allTransactions]);
+  // Categories from hook (already loaded via useFinanceCategories)
+  const categories = useMemo(() => expenseCategories.map((c) => c.name).sort(), [expenseCategories]);
 
   // Spent per category
   const spentByCategory = useMemo(() => {

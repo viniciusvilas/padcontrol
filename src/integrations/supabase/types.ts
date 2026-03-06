@@ -116,6 +116,39 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_categories: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          type: Database["public"]["Enums"]["finance_category_type"]
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          type?: Database["public"]["Enums"]["finance_category_type"]
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          type?: Database["public"]["Enums"]["finance_category_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       finance_income_sources: {
         Row: {
           created_at: string
@@ -374,6 +407,7 @@ export type Database = {
     }
     Enums: {
       finance_bill_status: "pending" | "paid" | "overdue"
+      finance_category_type: "income" | "expense" | "both"
       finance_recurrence_interval: "monthly" | "weekly" | "yearly"
       finance_transaction_type: "income" | "expense"
     }
@@ -504,6 +538,7 @@ export const Constants = {
   public: {
     Enums: {
       finance_bill_status: ["pending", "paid", "overdue"],
+      finance_category_type: ["income", "expense", "both"],
       finance_recurrence_interval: ["monthly", "weekly", "yearly"],
       finance_transaction_type: ["income", "expense"],
     },

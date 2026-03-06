@@ -3,6 +3,7 @@ import { ArrowLeftRight, Plus, Search, Pencil, Trash2, RotateCcw, Download } fro
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFinanceCategories } from "@/hooks/useFinanceCategories";
 import { format, parseISO, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,9 @@ const PAGE_SIZE = 15;
 export default function FinancasTransacoes() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { filtered: incomeCategories } = useFinanceCategories("income");
+  const { filtered: expenseCategories } = useFinanceCategories("expense");
+  const { categories: allCats } = useFinanceCategories();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<TxForm>(emptyForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -76,11 +80,13 @@ export default function FinancasTransacoes() {
     enabled: !!user,
   });
 
+  // All categories for filter: merge dynamic + any legacy from transactions
   const allCategories = useMemo(() => {
     const set = new Set<string>();
+    allCats.forEach((c) => set.add(c.name));
     transactions.forEach((t: any) => { if (t.category) set.add(t.category); });
     return Array.from(set).sort();
-  }, [transactions]);
+  }, [transactions, allCats]);
 
   const filtered = useMemo(() => {
     let result = transactions as any[];
@@ -405,7 +411,19 @@ export default function FinancasTransacoes() {
               </div>
               <div>
                 <Label>Categoria</Label>
-                <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Ex: Alimentação" />
+                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {(form.type === "income" ? incomeCategories : expenseCategories).map((c) => (
+                      <SelectItem key={c.id} value={c.name}>
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: c.color }} />
+                          {c.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div>

@@ -1,7 +1,7 @@
 import {
   Package, Clock, Phone, PhoneCall, AlertTriangle, CheckCircle, XCircle,
   Megaphone, LayoutDashboard, TrendingUp, Trophy, LogOut, Download,
-  Wallet, ArrowLeftRight, Receipt, LineChart, PieChart
+  Wallet, ArrowLeftRight, Receipt, LineChart, PieChart, Tags
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -45,6 +45,7 @@ const menuFinancas = [
   { title: "Orçamento", url: "/financas/orcamento", icon: PieChart },
   { title: "Investimentos", url: "/financas/investimentos", icon: TrendingUp },
   { title: "Projeções", url: "/financas/projecoes", icon: LineChart },
+  { title: "Categorias", url: "/financas/categorias", icon: Tags },
 ];
 
 export function AppSidebar() {

@@ -3,6 +3,7 @@ import { Receipt, Plus, CheckCircle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFinanceCategories } from "@/hooks/useFinanceCategories";
 import { format, parseISO, isBefore, startOfDay, startOfMonth, endOfMonth, subMonths, addMonths, addWeeks, addYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +54,7 @@ function buildMonthOptions() {
 export default function FinancasContasPagar() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { filtered: expenseCategories } = useFinanceCategories("expense");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<BillForm>(emptyForm);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
@@ -319,7 +321,19 @@ export default function FinancasContasPagar() {
             </div>
             <div>
               <Label>Categoria</Label>
-              <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Ex: Moradia" />
+              <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {expenseCategories.map((c) => (
+                    <SelectItem key={c.id} value={c.name}>
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: c.color }} />
+                        {c.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center gap-2">
               <Checkbox checked={form.is_recurring} onCheckedChange={(v) => setForm({ ...form, is_recurring: !!v })} />
