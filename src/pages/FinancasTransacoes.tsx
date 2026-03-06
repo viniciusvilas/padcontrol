@@ -67,6 +67,7 @@ export default function FinancasTransacoes() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [accountFilter, setAccountFilter] = useState("all");
   const [period, setPeriod] = useState("month");
   const [page, setPage] = useState(0);
 
@@ -94,7 +95,6 @@ export default function FinancasTransacoes() {
 
   const filtered = useMemo(() => {
     let result = transactions as any[];
-    // Period
     if (period !== "all") {
       const now = new Date();
       const cutoff = period === "month" ? startOfMonth(now) : subDays(now, Number(period));
@@ -102,12 +102,13 @@ export default function FinancasTransacoes() {
     }
     if (typeFilter !== "all") result = result.filter((t) => t.type === typeFilter);
     if (categoryFilter !== "all") result = result.filter((t) => t.category === categoryFilter);
+    if (accountFilter !== "all") result = result.filter((t) => t.account_id === accountFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((t) => t.description?.toLowerCase().includes(q));
     }
     return result;
-  }, [transactions, period, typeFilter, categoryFilter, search]);
+  }, [transactions, period, typeFilter, categoryFilter, accountFilter, search]);
 
   const totalReceitas = filtered.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
   const totalDespesas = filtered.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
