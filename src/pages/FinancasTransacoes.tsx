@@ -240,7 +240,7 @@ export default function FinancasTransacoes() {
       if (result.imported === 0 && result.skipped === 0) {
         toast.info("Nenhuma venda paga encontrada.");
       } else {
-        toast.success(`${result.imported} pedidos importados, ${result.skipped} já existiam`);
+        toast.success(`${result.imported} importados, ${result.skipped} atualizados (datas corrigidas)`);
       }
     },
     onError: () => toast.error("Erro ao importar vendas."),
