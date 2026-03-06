@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinanceCategories } from "@/hooks/useFinanceCategories";
+import { useFinanceAccounts } from "@/hooks/useFinanceAccounts";
 import { format, parseISO, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ interface TxForm {
   source: string;
   is_recurring: boolean;
   notes: string;
+  account_id: string;
 }
 
 const emptyForm: TxForm = {
@@ -38,6 +40,7 @@ const emptyForm: TxForm = {
   source: "",
   is_recurring: false,
   notes: "",
+  account_id: "",
 };
 
 const periodOptions = [
@@ -55,6 +58,7 @@ export default function FinancasTransacoes() {
   const { filtered: incomeCategories } = useFinanceCategories("income");
   const { filtered: expenseCategories } = useFinanceCategories("expense");
   const { categories: allCats } = useFinanceCategories();
+  const { activeAccounts, accounts: allAccounts } = useFinanceAccounts();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<TxForm>(emptyForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
