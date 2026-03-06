@@ -610,6 +610,7 @@ export default function FinancasContas() {
                   <SelectContent>
                     <SelectItem value="pj">PJ</SelectItem>
                     <SelectItem value="pf">PF</SelectItem>
+                    <SelectItem value="plataforma">Plataforma</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
