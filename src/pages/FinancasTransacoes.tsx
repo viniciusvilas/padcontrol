@@ -390,7 +390,8 @@ export default function FinancasTransacoes() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
