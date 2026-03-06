@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import {
   Package, Clock, Phone, PhoneCall, AlertTriangle, CheckCircle, XCircle,
   Megaphone, LayoutDashboard, TrendingUp, Trophy, LogOut, Download,
-  Wallet, ArrowLeftRight, Receipt, LineChart, PieChart, Tags, Building2
+  Wallet, ArrowLeftRight, Receipt, LineChart, PieChart, Tags, Building2, ClipboardList
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -48,6 +48,7 @@ const menuFinancas = [
   { title: "Contas a Pagar", url: "/financas/contas-a-pagar", icon: Receipt },
   { title: "Orçamento", url: "/financas/orcamento", icon: PieChart },
   { title: "Investimentos", url: "/financas/investimentos", icon: TrendingUp },
+  { title: "A Receber", url: "/financas/a-receber", icon: ClipboardList },
   { title: "Projeções", url: "/financas/projecoes", icon: LineChart },
   { title: "Categorias", url: "/financas/categorias", icon: Tags },
   { title: "Contas", url: "/financas/contas", icon: Building2 },
