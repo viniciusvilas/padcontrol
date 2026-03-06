@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
-import { ArrowLeftRight, Plus, Search, Pencil, Trash2, RotateCcw } from "lucide-react";
+import { ArrowLeftRight, Plus, Search, Pencil, Trash2, RotateCcw, Download } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, parseISO, subDays, startOfMonth } from "date-fns";
+import { format, parseISO, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
