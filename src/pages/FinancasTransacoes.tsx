@@ -186,24 +186,21 @@ export default function FinancasTransacoes() {
   // Import sales from pedidos
   const importSalesMutation = useMutation({
     mutationFn: async () => {
-      // Fetch ALL paid orders without limit
+      // Find PJ Esposa account for auto-linking
+      const pjEsposa = allAccounts.find((a) => a.name.toLowerCase().includes("pj esposa"));
+      const pjEsposaId = pjEsposa?.id || null;
+
       const { data: paidOrders, error: e1 } = await supabase
-        .from("pedidos")
-        .select("*")
-        .eq("user_id", user!.id)
-        .eq("pedido_pago", true);
+        .from("pedidos").select("*")
+        .eq("user_id", user!.id).eq("pedido_pago", true);
       if (e1) throw e1;
       if (!paidOrders || paidOrders.length === 0) return { imported: 0, skipped: 0 };
 
-      // Fetch all existing imported notes for duplicate check
       const { data: existing, error: e2 } = await supabase
-        .from("finance_transactions")
-        .select("id, notes")
-        .eq("user_id", user!.id)
-        .eq("category", "Pay After Delivery");
+        .from("finance_transactions").select("id, notes")
+        .eq("user_id", user!.id).eq("category", "Pay After Delivery");
       if (e2) throw e2;
 
-      // Build map of existing imported transactions for duplicate check & date update
       const existingMap = new Map<string, string>();
       (existing || []).forEach((t: any) => { if (t.notes && t.id) existingMap.set(t.notes, t.id); });
 
@@ -215,7 +212,6 @@ export default function FinancasTransacoes() {
         const ref = `pedido:${o.id}`;
         const correctDate = o.data_entrega || o.data;
         if (existingMap.has(ref)) {
-          // Update date of already-imported transaction to use delivery date
           toUpdate.push({ id: existingMap.get(ref)!, date: correctDate });
           skipped++;
           continue;
@@ -230,6 +226,7 @@ export default function FinancasTransacoes() {
           source: "Módulo de Vendas",
           is_recurring: false,
           notes: ref,
+          account_id: pjEsposaId,
         });
       }
 
