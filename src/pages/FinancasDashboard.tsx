@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Wallet, TrendingUp, TrendingDown, Scale, Landmark, AlertTriangle, ArrowLeftRight, Package } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Scale, Landmark, AlertTriangle, ArrowLeftRight, Package, PieChart as PieChartIcon } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +8,7 @@ import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 
