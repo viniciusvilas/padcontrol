@@ -351,7 +351,7 @@ export default function FinancasTransacoes() {
                   <TableHead>Data</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Categoria</TableHead>
-                  <TableHead>Fonte</TableHead>
+                  <TableHead>Conta</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead className="text-center">Recorrente</TableHead>
@@ -360,13 +360,22 @@ export default function FinancasTransacoes() {
               </TableHeader>
               <TableBody>
                 {paginated.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-10">Nenhuma transação encontrada.</TableCell></TableRow>
-                ) : paginated.map((tx: any, i: number) => (
+                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-10">Nenhuma transação encontrada.</TableCell></TableRow>
+                ) : paginated.map((tx: any, i: number) => {
+                  const txAcc = allAccounts.find((a) => a.id === tx.account_id);
+                  return (
                   <TableRow key={tx.id} className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}>
                     <TableCell className="whitespace-nowrap">{format(parseISO(tx.date), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="max-w-[200px] truncate">{tx.description}</TableCell>
                     <TableCell>{tx.category || "—"}</TableCell>
-                    <TableCell>{tx.source || "—"}</TableCell>
+                    <TableCell>
+                      {txAcc ? (
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: txAcc.color }} />
+                          <span className="text-xs">{txAcc.name}</span>
+                        </span>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={tx.type === "income" ? "default" : "destructive"} className={tx.type === "income" ? "bg-success text-success-foreground" : ""}>
                         {tx.type === "income" ? "Receita" : "Despesa"}
