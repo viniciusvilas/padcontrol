@@ -176,32 +176,28 @@ export default function FinancasTransacoes() {
   const importSalesMutation = useMutation({
     mutationFn: async () => {
       setImporting(true);
-      const now = new Date();
-      const mStart = format(startOfMonth(now), "yyyy-MM-dd");
-      const mEnd = format(endOfMonth(now), "yyyy-MM-dd");
 
-      // Get paid orders this month
+      // Get ALL paid orders (no month filter - import everything not yet imported)
       const { data: paidOrders, error: e1 } = await supabase
         .from("pedidos")
         .select("id, data, cliente, produto, valor")
         .eq("user_id", user!.id)
         .eq("pedido_pago", true)
-        .gte("data", mStart)
-        .lte("data", mEnd);
+        .order("data", { ascending: false });
       if (e1) throw e1;
-      if (!paidOrders || paidOrders.length === 0) throw new Error("Nenhuma venda paga no mês.");
+      if (!paidOrders || paidOrders.length === 0) throw new Error("Nenhuma venda paga encontrada.");
 
-      // Get existing imported transactions to avoid duplicates (check notes for pedido ID)
+      // Get ALL existing imported transaction notes to check duplicates by pedido ID
       const { data: existing, error: e2 } = await supabase
         .from("finance_transactions")
         .select("notes")
         .eq("user_id", user!.id)
-        .eq("category", "Pay After Delivery")
-        .gte("date", mStart)
-        .lte("date", mEnd);
+        .eq("category", "Pay After Delivery");
       if (e2) throw e2;
 
       const importedIds = new Set((existing || []).map((t: any) => t.notes).filter(Boolean));
+
+      // Filter out already imported orders individually by ID
       const toInsert = paidOrders
         .filter((o) => !importedIds.has(`pedido:${o.id}`))
         .map((o) => ({
@@ -218,9 +214,15 @@ export default function FinancasTransacoes() {
 
       if (toInsert.length === 0) throw new Error("Todas as vendas já foram importadas.");
 
-      const { error: e3 } = await supabase.from("finance_transactions").insert(toInsert);
-      if (e3) throw e3;
-      return toInsert.length;
+      // Insert in batches of 50 to avoid payload limits
+      let inserted = 0;
+      for (let i = 0; i < toInsert.length; i += 50) {
+        const batch = toInsert.slice(i, i + 50);
+        const { error: e3 } = await supabase.from("finance_transactions").insert(batch);
+        if (e3) throw e3;
+        inserted += batch.length;
+      }
+      return inserted;
     },
     onSuccess: (count) => {
       qc.invalidateQueries({ queryKey: ["fin-transactions-all"] });
