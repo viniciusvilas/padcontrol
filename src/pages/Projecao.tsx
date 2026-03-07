@@ -121,9 +121,14 @@ export default function Projecao() {
       if (!p.previsao_entrega) return false;
       if (p.pedido_pago || p.pedido_perdido) return false;
       const prev = parseISO(p.previsao_entrega);
-      return prev >= hoje && prev <= limite;
+      return prev <= limite;
     });
   }, [pedidos, dias, hoje]);
+
+  const pedidosAtrasados = useMemo(() =>
+    pedidosFiltrados.filter((p) => parseISO(p.previsao_entrega!) < hoje),
+    [pedidosFiltrados, hoje]
+  );
 
   const cenarios = useMemo(() => {
     if (pedidosFiltrados.length === 0) return [];
@@ -283,6 +288,9 @@ export default function Projecao() {
 
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                   <span>Pedidos no período: <strong className="text-foreground">{pedidosFiltrados.length}</strong></span>
+                  {pedidosAtrasados.length > 0 && (
+                    <span className="text-destructive">Atrasados: <strong>{pedidosAtrasados.length}</strong></span>
+                  )}
                   <span>Valor total: <strong className="text-foreground">{fmt(pedidosFiltrados.reduce((s, p) => s + Number(p.valor), 0))}</strong></span>
                   <span>Pagamento estimado: <strong className="text-foreground">entrega + 3 dias</strong></span>
                 </div>
@@ -293,7 +301,7 @@ export default function Projecao() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">
-                    Cenários — {pedidosFiltrados.length} pedidos com entrega nos próximos {dias} dias
+                    Cenários — {pedidosFiltrados.length} pedidos pendentes{pedidosAtrasados.length > 0 ? ` (${pedidosAtrasados.length} atrasados)` : ` nos próximos ${dias} dias`}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -322,7 +330,7 @@ export default function Projecao() {
             ) : (
               <Card>
                 <CardContent className="py-10 text-center text-muted-foreground">
-                  Nenhum pedido com previsão de entrega nos próximos {dias} dias (excluindo pagos e perdidos).
+                  Nenhum pedido pendente com previsão de entrega até {dias} dias à frente (excluindo pagos e perdidos).
                 </CardContent>
               </Card>
             )}
