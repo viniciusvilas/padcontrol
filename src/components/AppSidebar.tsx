@@ -80,7 +80,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarContent>
+      <SidebarContent className="overflow-y-auto group-data-[collapsible=icon]:overflow-y-auto">
         <div className={`px-4 py-5 ${collapsed ? "px-2" : ""}`}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center flex-shrink-0">
