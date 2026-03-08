@@ -114,8 +114,11 @@ export default function Dashboard() {
   const qtdFive = filtered.filter((p) => p.plataforma === "Five").length;
   const qtdKeed = filtered.filter((p) => p.plataforma === "Keed").length;
 
-  const gastoFrete = qtdFive * FRETE_FIVE;
-  const lucroPagos = faturamentoPagos - totalInvestido - gastoFrete;
+  const fiveNaoPagos = filtered.filter((p) => p.plataforma === "Five" && !p.pedido_pago).length;
+  const fivePagos = filtered.filter((p) => p.plataforma === "Five" && p.pedido_pago).length;
+  const gastoFreteReal = fiveNaoPagos * FRETE_FIVE;
+  const freteDevolvido = fivePagos * FRETE_FIVE;
+  const lucroPagos = faturamentoPagos - totalInvestido - gastoFreteReal;
   const cpaMedio = qtdPedidos > 0 ? totalInvestido / qtdPedidos : 0;
 
   // CPA do dia
@@ -241,7 +244,7 @@ export default function Dashboard() {
         <MetricCard title="Faturamento Pagos" icon={DollarSign} value={`R$ ${faturamentoPagos.toFixed(2)}`} className="text-primary" />
         <MetricCard title="Agendado (s/ Pagos)" icon={Package} value={`R$ ${valorAgendadoSemPagos.toFixed(2)}`} />
         <MetricCard title="Investimento Anúncios" icon={Megaphone} value={`R$ ${totalInvestido.toFixed(2)}`} className="text-destructive" />
-        <MetricCard title="Gasto com Frete" icon={Truck} value={`R$ ${gastoFrete.toFixed(2)}`} subtitle={`${qtdFive} pedidos Five`} className="text-destructive" />
+        <MetricCard title="Frete Pendente" icon={Truck} value={`R$ ${gastoFreteReal.toFixed(2)}`} subtitle={`${fiveNaoPagos} não pagos · R$ ${freteDevolvido.toFixed(2)} devolvido (${fivePagos} pagos)`} className="text-destructive" />
       </div>
 
       {/* Metric Cards Row 2 */}
