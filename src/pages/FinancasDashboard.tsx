@@ -355,6 +355,28 @@ export default function FinancasDashboard() {
   // Receivables month total
   const receivableMonthTotal = (receivableInstallmentsMonth as any[]).reduce((s: number, i: any) => s + Number(i.amount), 0);
 
+  // Saque mutation
+  const saveSaqueMutation = useMutation({
+    mutationFn: async () => {
+      if (!saqueFrom || !saqueTo || saqueFrom === saqueTo) throw new Error("Selecione contas diferentes");
+      const amount = Number(saqueAmount);
+      if (!amount || amount <= 0) throw new Error("Valor inválido");
+      const { error } = await supabase.from("finance_transfers").insert({
+        user_id: user!.id, from_account_id: saqueFrom, to_account_id: saqueTo,
+        amount, date: format(new Date(), "yyyy-MM-dd"),
+        description: "Saque de plataforma", category: "Saque de Plataforma",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["finance-transfers"] });
+      qc.invalidateQueries({ queryKey: ["finance-accounts"] });
+      setSaqueDialog(false); setSaqueFrom(""); setSaqueTo(""); setSaqueAmount("");
+      toast.success("Saque registrado!");
+    },
+    onError: (e: any) => toast.error(e.message || "Erro ao registrar saque."),
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
