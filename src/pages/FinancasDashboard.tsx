@@ -396,6 +396,7 @@ export default function FinancasDashboard() {
           </SelectContent>
         </Select>
         </div>
+      </div>
 
       {/* ═══ CONSOLIDATED ACCOUNTS SECTION ═══ */}
       <div className="space-y-4">
