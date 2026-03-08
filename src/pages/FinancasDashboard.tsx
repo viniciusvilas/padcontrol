@@ -385,13 +385,17 @@ export default function FinancasDashboard() {
           <Wallet className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Dashboard Financeiro</h1>
         </div>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => setSaqueDialog(true)}>
+            <ArrowDownToLine className="h-4 w-4 mr-2" />Sacar da Plataforma
+          </Button>
         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
           <SelectTrigger className="w-52"><SelectValue /></SelectTrigger>
           <SelectContent>
             {monthOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
           </SelectContent>
         </Select>
-      </div>
+        </div>
 
       {/* ═══ CONSOLIDATED ACCOUNTS SECTION ═══ */}
       <div className="space-y-4">
@@ -789,6 +793,47 @@ export default function FinancasDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Saque Dialog */}
+      <Dialog open={saqueDialog} onOpenChange={setSaqueDialog}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Sacar da Plataforma</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Plataforma (origem)</Label>
+              <Select value={saqueFrom} onValueChange={setSaqueFrom}>
+                <SelectTrigger><SelectValue placeholder="Selecione a plataforma" /></SelectTrigger>
+                <SelectContent>
+                  {activePlatformAccounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>{a.name} — R$ {a.computedBalance.toFixed(2)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Conta destino</Label>
+              <Select value={saqueTo} onValueChange={setSaqueTo}>
+                <SelectTrigger><SelectValue placeholder="Selecione a conta" /></SelectTrigger>
+                <SelectContent>
+                  {activeBankAccounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Valor</Label>
+              <Input type="number" placeholder="0.00" value={saqueAmount} onChange={(e) => setSaqueAmount(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaqueDialog(false)}>Cancelar</Button>
+            <Button onClick={() => saveSaqueMutation.mutate()} disabled={saveSaqueMutation.isPending}>
+              {saveSaqueMutation.isPending ? "Salvando..." : "Confirmar Saque"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
