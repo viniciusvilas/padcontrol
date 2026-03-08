@@ -49,6 +49,10 @@ export default function FinancasDashboard() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
+  const [saqueDialog, setSaqueDialog] = useState(false);
+  const [saqueFrom, setSaqueFrom] = useState("");
+  const [saqueTo, setSaqueTo] = useState("");
+  const [saqueAmount, setSaqueAmount] = useState("");
   const monthOptions = useMemo(buildMonthOptions, []);
   const { accounts, activeAccounts } = useFinanceAccounts();
 
