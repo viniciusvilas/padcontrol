@@ -162,9 +162,9 @@ export default function Pedidos() {
                   <TableCell className="font-medium whitespace-nowrap">{p.cliente}</TableCell>
                   <TableCell className="whitespace-nowrap">
                     <span className="flex items-center gap-1">
-                      {(p as any).cpf || "—"}
-                      {(p as any).cpf && (
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText((p as any).cpf); toast.success("CPF copiado!"); }}>
+                      {p.cpf || "—"}
+                      {p.cpf && (
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(p.cpf!); toast.success("CPF copiado!"); }}>
                           <Copy className="h-3 w-3" />
                         </Button>
                       )}

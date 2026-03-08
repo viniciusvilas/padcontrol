@@ -114,7 +114,8 @@ export default function Dashboard() {
   const qtdFive = filtered.filter((p) => p.plataforma === "Five").length;
   const qtdKeed = filtered.filter((p) => p.plataforma === "Keed").length;
 
-  const gastoFrete = qtdFive * FRETE_FIVE;
+  const qtdFivePagos = pagos.filter((p) => p.plataforma === "Five").length;
+  const gastoFrete = qtdFivePagos * FRETE_FIVE;
   const lucroPagos = faturamentoPagos - totalInvestido - gastoFrete;
   const cpaMedio = qtdPedidos > 0 ? totalInvestido / qtdPedidos : 0;
 
