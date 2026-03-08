@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
-import { Wallet, TrendingUp, TrendingDown, Scale, Landmark, AlertTriangle, ArrowLeftRight, Package, PieChart as PieChartIcon, Building2, Wallet2, Receipt, CalendarClock, ClipboardList } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Wallet, TrendingUp, TrendingDown, Scale, Landmark, AlertTriangle, ArrowLeftRight, Package, PieChart as PieChartIcon, Building2, Wallet2, Receipt, CalendarClock, ClipboardList, ArrowDownToLine } from "lucide-react";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFinanceAccounts, isPlatformAccount, isBankAccount } from "@/hooks/useFinanceAccounts";
@@ -14,6 +14,11 @@ import { Separator } from "@/components/ui/separator";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 const barConfig: ChartConfig = {
   income: { label: "Receitas", color: "hsl(var(--success))" },
