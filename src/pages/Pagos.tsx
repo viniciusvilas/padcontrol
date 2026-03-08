@@ -28,7 +28,8 @@ export default function Pagos() {
   });
 
   const totalValor = pedidos.reduce((s, p) => s + Number(p.valor), 0);
-  const totalFrete = pedidos.filter((p) => p.plataforma === "Five").length * 35.5;
+  const qtdFivePagos = pedidos.filter((p) => p.plataforma === "Five").length;
+  const freteDevolvido = qtdFivePagos * 35.5;
 
   return (
     <div>
@@ -44,12 +45,13 @@ export default function Pagos() {
           <p className="text-lg font-bold">R$ {totalValor.toFixed(2)}</p>
         </div>
         <div className="bg-card rounded-lg border p-3">
-          <p className="text-xs text-muted-foreground">Frete (Five)</p>
-          <p className="text-lg font-bold text-amber-600">R$ {totalFrete.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">Frete Devolvido (Five)</p>
+          <p className="text-lg font-bold text-emerald-600">R$ {freteDevolvido.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">{qtdFivePagos} pedidos</p>
         </div>
         <div className="bg-card rounded-lg border p-3">
           <p className="text-xs text-muted-foreground">Líquido</p>
-          <p className="text-lg font-bold text-emerald-600">R$ {(totalValor - totalFrete).toFixed(2)}</p>
+          <p className="text-lg font-bold text-emerald-600">R$ {totalValor.toFixed(2)}</p>
         </div>
       </div>
 
