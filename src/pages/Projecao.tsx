@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+
 import { TrendingUp, Calculator, DollarSign, Package, Percent, Megaphone, CalendarDays, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -113,7 +114,7 @@ export default function Projecao() {
   }, [pedidos, anuncios]);
 
   // --- Seção 1: Pedidos reais com previsão de entrega no período ---
-  const hoje = startOfDay(new Date());
+  const hoje = useMemo(() => startOfDay(new Date()), []);
 
   const pedidosFiltrados = useMemo(() => {
     const limite = addDays(hoje, dias);

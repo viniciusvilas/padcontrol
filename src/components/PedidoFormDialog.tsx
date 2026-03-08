@@ -56,7 +56,7 @@ const ESTADOS_BR = [
   "RS","RO","RR","SC","SP","SE","TO",
 ];
 
-const calcPrevisaoDefault = (data: string, prazo: string) => {
+const calcPrevisao = (data: string, prazo: string) => {
   if (!data || !prazo) return "";
   const date = new Date(data + "T12:00:00");
   let dias = parseInt(prazo) || 0;
@@ -80,7 +80,7 @@ const defaultForm = {
   local_entrega: "",
   prazo: defaultPrazo,
   data: defaultData,
-  previsao_entrega: calcPrevisaoDefault(defaultData, defaultPrazo),
+  previsao_entrega: calcPrevisao(defaultData, defaultPrazo),
   status: "criado",
   plataforma: "Five",
   rastreio: "",
@@ -128,18 +128,6 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
       setForm(defaultForm);
     }
   }, [pedido, open]);
-
-  const calcPrevisao = (data: string, prazo: string) => {
-    if (!data || !prazo) return "";
-    const date = new Date(data + "T12:00:00");
-    let dias = parseInt(prazo) || 0;
-    while (dias > 0) {
-      date.setDate(date.getDate() + 1);
-      const dow = date.getDay();
-      if (dow !== 0 && dow !== 6) dias--;
-    }
-    return date.toISOString().slice(0, 10);
-  };
 
   const set = (key: string, value: any) => {
     setForm((prev) => {
