@@ -1,23 +1,34 @@
 
 
-## Linhas alternadas com tons de roxo nas tabelas de pedidos
+## Entendimento
 
-### O que será feito
-Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
+Na Five, quando o pedido é pago, o valor do frete volta para você. Ou seja, o frete é custo real apenas para pedidos Five **não pagos** (perdidos ou ainda pendentes). Valores recebidos: 3+1 = R$201,35 / 5+1 = R$251,35 (produto + frete devolvido).
 
-### Abordagem
-A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
+## Plano
 
-1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
-2. **Perdidos.tsx**
-3. **Pagos.tsx**
-4. **Prioridade.tsx**
-5. **FaltaChamar.tsx**
-6. **PrestesAChegar.tsx**
+### 1. Ajustar cálculo de lucro no Dashboard (`src/pages/Dashboard.tsx`)
 
-### Classes CSS
-- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
-- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
+Separar o frete em duas categorias:
+- **Frete pendente**: pedidos Five que ainda NÃO foram pagos (custo real)
+- **Frete devolvido**: pedidos Five que JÁ foram pagos (não é custo)
 
-Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
+```
+gastoFreteReal = (Five não pagos) × 35,50
+freteDevolvido = (Five pagos) × 35,50
+lucroPagos = faturamentoPagos - totalInvestido - gastoFreteReal
+```
+
+### 2. Atualizar cards de métricas
+
+- Card "Gasto com Frete" → mostrar o frete real (apenas não pagos) como valor principal
+- Adicionar subtitle mostrando "R$ X devolvido (Y pedidos pagos)"
+
+### 3. Ajustar página Pagos (`src/pages/Pagos.tsx`)
+
+- O card "Frete (Five)" deve indicar que o frete foi devolvido
+- O card "Líquido" não precisa subtrair o frete dos pagos, já que ele volta
+
+### Arquivos alterados
+- `src/pages/Dashboard.tsx` — cálculo de frete e card de métricas
+- `src/pages/Pagos.tsx` — ajuste no cálculo líquido
 
