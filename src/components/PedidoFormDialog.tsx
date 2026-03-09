@@ -44,11 +44,18 @@ const STATUS_OPTIONS = [
   { value: "perdido", label: "Perdido" },
 ];
 
-const PRODUTO_OPTIONS = [
-  { value: "3+1", label: "3+1", preco: 163 },
-  { value: "5+1", label: "5+1", preco: 213 },
-  { value: "12", label: "12", preco: 350 },
-];
+const PRODUTO_OPTIONS: Record<string, { value: string; label: string; preco: number }[]> = {
+  Keed: [
+    { value: "3+1", label: "3+1", preco: 163 },
+    { value: "5+1", label: "5+1", preco: 213 },
+    { value: "12", label: "12", preco: 350 },
+  ],
+  Five: [
+    { value: "3+1", label: "3+1", preco: 201.50 },
+    { value: "5+1", label: "5+1", preco: 251.35 },
+    { value: "12", label: "12", preco: 350 },
+  ],
+};
 
 const ESTADOS_BR = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA",
@@ -153,6 +160,12 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
           next.rastreio = autoRastreio;
         }
       }
+      // Auto-update valor when plataforma changes and produto is selected
+      if (key === "plataforma" && next.produto) {
+        const options = PRODUTO_OPTIONS[value] || PRODUTO_OPTIONS["Five"];
+        const found = options.find((p) => p.value === next.produto);
+        if (found) next.valor = String(found.preco);
+      }
       return next;
     });
   };
@@ -223,17 +236,26 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
             <Input id="cliente" value={form.cliente} onChange={(e) => set("cliente", e.target.value)} placeholder="Nome do cliente" />
           </div>
 
-          {/* Valor */}
+          {/* Plataforma - ANTES do produto para definir preços */}
           <div className="space-y-1.5">
-            <Label htmlFor="valor">Valor (R$) *</Label>
-            <Input id="valor" value={form.valor} onChange={(e) => set("valor", e.target.value)} placeholder="0.00" />
+            <Label>Plataforma</Label>
+            <Select value={form.plataforma} onValueChange={(v) => set("plataforma", v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Five">Five (frete R$35,50)</SelectItem>
+                <SelectItem value="Keed">Keed (frete grátis)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Produto */}
           <div className="space-y-1.5">
             <Label>Produto *</Label>
             <Select value={form.produto || undefined} onValueChange={(v) => {
-              const found = PRODUTO_OPTIONS.find((p) => p.value === v);
+              const options = PRODUTO_OPTIONS[form.plataforma] || PRODUTO_OPTIONS["Five"];
+              const found = options.find((p) => p.value === v);
               setForm((prev) => ({
                 ...prev,
                 produto: v,
@@ -244,11 +266,17 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
                 <SelectValue placeholder="Selecione o produto" />
               </SelectTrigger>
               <SelectContent>
-                {PRODUTO_OPTIONS.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>{p.label} — R$ {p.preco}</SelectItem>
+                {(PRODUTO_OPTIONS[form.plataforma] || PRODUTO_OPTIONS["Five"]).map((p) => (
+                  <SelectItem key={p.value} value={p.value}>{p.label} — R$ {p.preco.toFixed(2)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Valor */}
+          <div className="space-y-1.5">
+            <Label htmlFor="valor">Valor (R$) *</Label>
+            <Input id="valor" value={form.valor} onChange={(e) => set("valor", e.target.value)} placeholder="0.00" />
           </div>
 
           {/* CPF */}
@@ -311,19 +339,6 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
             </Select>
           </div>
 
-          {/* Plataforma */}
-          <div className="space-y-1.5">
-            <Label>Plataforma</Label>
-            <Select value={form.plataforma} onValueChange={(v) => set("plataforma", v)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Five">Five (frete R$35,50)</SelectItem>
-                <SelectItem value="Keed">Keed (frete grátis)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Rastreio */}
           <div className="space-y-1.5 sm:col-span-2">

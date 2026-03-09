@@ -612,7 +612,7 @@ export default function FinancasContas() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Saldo Inicial (abertura)</Label>
+                <Label>Saldo da Conta</Label>
                 <Input type="number" step="0.01" value={accountForm.balance} onChange={(e) => setAccountForm({ ...accountForm, balance: e.target.value })} />
               </div>
               <div>
