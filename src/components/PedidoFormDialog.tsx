@@ -160,6 +160,12 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
           next.rastreio = autoRastreio;
         }
       }
+      // Auto-update valor when plataforma changes and produto is selected
+      if (key === "plataforma" && next.produto) {
+        const options = PRODUTO_OPTIONS[value] || PRODUTO_OPTIONS["Five"];
+        const found = options.find((p) => p.value === next.produto);
+        if (found) next.valor = String(found.preco);
+      }
       return next;
     });
   };
