@@ -44,11 +44,18 @@ const STATUS_OPTIONS = [
   { value: "perdido", label: "Perdido" },
 ];
 
-const PRODUTO_OPTIONS = [
-  { value: "3+1", label: "3+1", preco: 163 },
-  { value: "5+1", label: "5+1", preco: 213 },
-  { value: "12", label: "12", preco: 350 },
-];
+const PRODUTO_OPTIONS: Record<string, { value: string; label: string; preco: number }[]> = {
+  Keed: [
+    { value: "3+1", label: "3+1", preco: 163 },
+    { value: "5+1", label: "5+1", preco: 213 },
+    { value: "12", label: "12", preco: 350 },
+  ],
+  Five: [
+    { value: "3+1", label: "3+1", preco: 201.50 },
+    { value: "5+1", label: "5+1", preco: 251.35 },
+    { value: "12", label: "12", preco: 350 },
+  ],
+};
 
 const ESTADOS_BR = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA",
