@@ -236,17 +236,26 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
             <Input id="cliente" value={form.cliente} onChange={(e) => set("cliente", e.target.value)} placeholder="Nome do cliente" />
           </div>
 
-          {/* Valor */}
+          {/* Plataforma - ANTES do produto para definir preços */}
           <div className="space-y-1.5">
-            <Label htmlFor="valor">Valor (R$) *</Label>
-            <Input id="valor" value={form.valor} onChange={(e) => set("valor", e.target.value)} placeholder="0.00" />
+            <Label>Plataforma</Label>
+            <Select value={form.plataforma} onValueChange={(v) => set("plataforma", v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Five">Five (frete R$35,50)</SelectItem>
+                <SelectItem value="Keed">Keed (frete grátis)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Produto */}
           <div className="space-y-1.5">
             <Label>Produto *</Label>
             <Select value={form.produto || undefined} onValueChange={(v) => {
-              const found = PRODUTO_OPTIONS.find((p) => p.value === v);
+              const options = PRODUTO_OPTIONS[form.plataforma] || PRODUTO_OPTIONS["Five"];
+              const found = options.find((p) => p.value === v);
               setForm((prev) => ({
                 ...prev,
                 produto: v,
@@ -257,11 +266,17 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
                 <SelectValue placeholder="Selecione o produto" />
               </SelectTrigger>
               <SelectContent>
-                {PRODUTO_OPTIONS.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>{p.label} — R$ {p.preco}</SelectItem>
+                {(PRODUTO_OPTIONS[form.plataforma] || PRODUTO_OPTIONS["Five"]).map((p) => (
+                  <SelectItem key={p.value} value={p.value}>{p.label} — R$ {p.preco.toFixed(2)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Valor */}
+          <div className="space-y-1.5">
+            <Label htmlFor="valor">Valor (R$) *</Label>
+            <Input id="valor" value={form.valor} onChange={(e) => set("valor", e.target.value)} placeholder="0.00" />
           </div>
 
           {/* CPF */}
