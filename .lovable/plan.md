@@ -1,33 +1,23 @@
 
 
-## Problema
+## Linhas alternadas com tons de roxo nas tabelas de pedidos
 
-Todas as tabelas financeiras possuem políticas RLS do tipo **RESTRICTIVE** (`Permissive: No`). No PostgreSQL, políticas RESTRICTIVE sem uma contraparte PERMISSIVE bloqueiam **100% do acesso** aos dados. Este é um problema já identificado anteriormente no projeto e que precisa ser corrigido definitivamente em todas as tabelas.
+### O que será feito
+Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
 
-## Solução
+### Abordagem
+A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
 
-Recriar todas as políticas RLS das tabelas financeiras como **PERMISSIVE** (o padrão do PostgreSQL). Isso envolve dropar as políticas existentes e recriá-las com a mesma lógica, mas sem a cláusula RESTRICTIVE.
+1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
+2. **Perdidos.tsx**
+3. **Pagos.tsx**
+4. **Prioridade.tsx**
+5. **FaltaChamar.tsx**
+6. **PrestesAChegar.tsx**
 
-### Tabelas afetadas (9 tabelas financeiras)
+### Classes CSS
+- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
+- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
 
-- `finance_accounts`
-- `finance_transactions`
-- `finance_transfers`
-- `finance_bills`
-- `finance_budgets`
-- `finance_categories`
-- `finance_envelopes`
-- `finance_distribution_rules`
-- `finance_investments`
-- `finance_income_sources`
-- `finance_receivables`
-- `finance_receivable_installments`
-
-### Ação
-
-Uma única migration SQL que para cada tabela:
-1. `DROP POLICY` das 4 políticas existentes (SELECT, INSERT, UPDATE, DELETE)
-2. `CREATE POLICY` com a mesma lógica mas como PERMISSIVE (padrão)
-
-Nenhuma alteração de código frontend necessária.
+Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
 
