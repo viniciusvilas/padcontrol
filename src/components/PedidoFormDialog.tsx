@@ -339,19 +339,6 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
             </Select>
           </div>
 
-          {/* Plataforma */}
-          <div className="space-y-1.5">
-            <Label>Plataforma</Label>
-            <Select value={form.plataforma} onValueChange={(v) => set("plataforma", v)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Five">Five (frete R$35,50)</SelectItem>
-                <SelectItem value="Keed">Keed (frete grátis)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Rastreio */}
           <div className="space-y-1.5 sm:col-span-2">
