@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Package, Upload, Plus, Search, Filter, Pencil, Trash2, Megaphone, Copy } from "lucide-react";
+import PagamentoDialog from "@/components/PagamentoDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ export default function Pedidos() {
   const [editPedido, setEditPedido] = useState<Pedido | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
+  const [pagamentoPedido, setPagamentoPedido] = useState<Pedido | null>(null);
 
   const { data: pedidos = [], isLoading, refetch } = useQuery({
     queryKey: ["pedidos", user?.id],
@@ -181,7 +183,12 @@ export default function Pedidos() {
                     </span>
                   </TableCell>
                   <TableCell>{p.produto}</TableCell>
-                  <TableCell className="whitespace-nowrap">R$ {Number(p.valor).toFixed(2)}</TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    R$ {Number(p.valor).toFixed(2)}
+                    {p.pedido_pago && p.valor_pago > 0 && p.valor_pago !== p.valor && (
+                      <span className="block text-xs text-muted-foreground">(pago: R$ {Number(p.valor_pago).toFixed(2)})</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={p.plataforma === "Five" ? "bg-amber-500/15 text-amber-700 border-amber-200" : "bg-blue-500/15 text-blue-700 border-blue-200"}>{p.plataforma}</Badge>
                   </TableCell>
@@ -205,7 +212,9 @@ export default function Pedidos() {
                   <TableCell><Checkbox checked={p.pedido_chegou} onCheckedChange={() => toggleField(p, "pedido_chegou")} /></TableCell>
                   <TableCell><Checkbox checked={p.ja_foi_chamado} onCheckedChange={() => toggleField(p, "ja_foi_chamado")} /></TableCell>
                   <TableCell><Checkbox checked={p.cliente_cobrado} onCheckedChange={() => toggleField(p, "cliente_cobrado")} /></TableCell>
-                  <TableCell><Checkbox checked={p.pedido_pago} onCheckedChange={() => toggleField(p, "pedido_pago")} /></TableCell>
+                  <TableCell><Checkbox checked={p.pedido_pago} onCheckedChange={(checked) => {
+                    if (checked) { setPagamentoPedido(p); } else { toggleField(p, "pedido_pago"); }
+                  }} /></TableCell>
                   <TableCell><Checkbox checked={p.pedido_perdido} onCheckedChange={() => toggleField(p, "pedido_perdido")} /></TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -224,6 +233,12 @@ export default function Pedidos() {
         </Table>
       </div>
 
+      <PagamentoDialog
+        pedido={pagamentoPedido}
+        open={!!pagamentoPedido}
+        onOpenChange={(open) => { if (!open) setPagamentoPedido(null); }}
+        onSuccess={refetch}
+      />
       <ImportPedidosDialog open={importOpen} onOpenChange={setImportOpen} onSuccess={refetch} />
       <PedidoFormDialog open={formOpen} onOpenChange={setFormOpen} onSuccess={refetch} pedido={editPedido} />
     </div>

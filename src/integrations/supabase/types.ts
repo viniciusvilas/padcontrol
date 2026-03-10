@@ -584,6 +584,7 @@ export type Database = {
           cliente: string
           cliente_cobrado: boolean
           cliente_problematico: boolean
+          conta_destino_id: string | null
           cpf: string | null
           created_at: string
           data: string
@@ -607,11 +608,13 @@ export type Database = {
           updated_at: string
           user_id: string
           valor: number
+          valor_pago: number
         }
         Insert: {
           cliente: string
           cliente_cobrado?: boolean
           cliente_problematico?: boolean
+          conta_destino_id?: string | null
           cpf?: string | null
           created_at?: string
           data?: string
@@ -635,11 +638,13 @@ export type Database = {
           updated_at?: string
           user_id: string
           valor?: number
+          valor_pago?: number
         }
         Update: {
           cliente?: string
           cliente_cobrado?: boolean
           cliente_problematico?: boolean
+          conta_destino_id?: string | null
           cpf?: string | null
           created_at?: string
           data?: string
@@ -663,8 +668,17 @@ export type Database = {
           updated_at?: string
           user_id?: string
           valor?: number
+          valor_pago?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_conta_destino_id_fkey"
+            columns: ["conta_destino_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

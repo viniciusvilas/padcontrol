@@ -1,0 +1,2 @@
+ALTER TABLE public.pedidos ADD COLUMN IF NOT EXISTS valor_pago numeric NOT NULL DEFAULT 0;
+ALTER TABLE public.pedidos ADD COLUMN IF NOT EXISTS conta_destino_id uuid REFERENCES public.finance_accounts(id);

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Phone, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,12 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { toast } from "sonner";
+import PagamentoDialog from "@/components/PagamentoDialog";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Pedido = Tables<"pedidos">;
 
 export default function Cobranca() {
   const { user } = useAuth();
+  const [pagamentoPedido, setPagamentoPedido] = useState<Pedido | null>(null);
 
   const { data: pedidos = [], isLoading, refetch } = useQuery({
     queryKey: ["pedidos-cobranca", user?.id],
@@ -31,8 +34,8 @@ export default function Cobranca() {
     enabled: !!user,
   });
 
-  const problematicos = pedidos.filter((p) => (p as any).cliente_problematico);
-  const normais = pedidos.filter((p) => !(p as any).cliente_problematico);
+  const problematicos = pedidos.filter((p) => p.cliente_problematico);
+  const normais = pedidos.filter((p) => !p.cliente_problematico);
   const naoCobrados = normais.filter((p) => !p.cliente_cobrado);
   const cobrados = normais.filter((p) => p.cliente_cobrado);
 
@@ -40,12 +43,6 @@ export default function Cobranca() {
     const { error } = await supabase.from("pedidos").update({ cliente_cobrado: true }).eq("id", id);
     if (error) toast.error("Erro ao atualizar");
     else { toast.success("Marcado como cobrado!"); refetch(); }
-  };
-
-  const marcarPago = async (id: string) => {
-    const { error } = await supabase.from("pedidos").update({ pedido_pago: true, status: "pago" }).eq("id", id);
-    if (error) toast.error("Erro ao atualizar");
-    else { toast.success("Marcado como pago!"); refetch(); }
   };
 
   const marcarPerdido = async (id: string) => {
@@ -97,7 +94,7 @@ export default function Cobranca() {
                   <div className="flex gap-1 flex-wrap">
                     {isProblematico ? (
                       <>
-                        <Button size="sm" onClick={() => marcarPago(p.id)}>💰 Pago</Button>
+                        <Button size="sm" onClick={() => setPagamentoPedido(p)}>💰 Pago</Button>
                         <Button size="sm" variant="destructive" onClick={() => marcarPerdido(p.id)}>❌ Perdido</Button>
                         <Button size="sm" variant="ghost" onClick={() => toggleProblematico(p.id, false)} className="text-muted-foreground">✅ Remover</Button>
                       </>
@@ -106,7 +103,7 @@ export default function Cobranca() {
                         {showCobradoBtn ? (
                           <Button size="sm" variant="outline" onClick={() => marcarCobrado(p.id)}>📞 Cobrado</Button>
                         ) : (
-                          <Button size="sm" onClick={() => marcarPago(p.id)}>💰 Pago</Button>
+                          <Button size="sm" onClick={() => setPagamentoPedido(p)}>💰 Pago</Button>
                         )}
                         <Button size="sm" variant="destructive" onClick={() => marcarPerdido(p.id)}>❌ Perdido</Button>
                         <Button size="sm" variant="ghost" onClick={() => toggleProblematico(p.id, true)} className="text-amber-600 hover:text-amber-700">
@@ -149,6 +146,13 @@ export default function Cobranca() {
           {renderTable(problematicos, false, true)}
         </>
       )}
+
+      <PagamentoDialog
+        pedido={pagamentoPedido}
+        open={!!pagamentoPedido}
+        onOpenChange={(open) => { if (!open) setPagamentoPedido(null); }}
+        onSuccess={refetch}
+      />
     </div>
   );
 }
