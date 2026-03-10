@@ -1,33 +1,23 @@
 
 
-## Plan: Botao "Em Rota" e Clientes Problematicos
+## Linhas alternadas com tons de roxo nas tabelas de pedidos
 
-### 1. Migration SQL -- adicionar 2 colunas na tabela `pedidos`
+### O que será feito
+Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
 
-- `em_rota` (boolean, default false) -- marca pedidos que estao em rota de entrega
-- `cliente_problematico` (boolean, default false) -- marca pedidos cujos clientes enrolam para responder
+### Abordagem
+A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
 
-RLS ja esta configurada para a tabela pedidos com CRUD completo.
+1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
+2. **Perdidos.tsx**
+3. **Pagos.tsx**
+4. **Prioridade.tsx**
+5. **FaltaChamar.tsx**
+6. **PrestesAChegar.tsx**
 
-### 2. Pagina Prestes a Chegar (`src/pages/PrestesAChegar.tsx`)
+### Classes CSS
+- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
+- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
 
-- Adicionar botao "Em Rota" ao lado do botao "Chegou" nas acoes de cada pedido
-- Ao clicar, seta `em_rota = true` no banco
-- Separar a tabela em duas secoes:
-  - **Em Rota** (pedidos com `em_rota = true`) -- destaque visual diferente (ex: fundo verde)
-  - **Aguardando** (pedidos com `em_rota = false`) -- tabela atual
-- Botao para reverter ("Tirar da rota") nos pedidos em rota
-
-### 3. Pagina Cobranca (`src/pages/Cobranca.tsx`)
-
-- Adicionar uma terceira secao: **Clientes Problematicos**
-- Nas tabelas existentes (Aguardando Cobranca e Ja Cobrados), adicionar botao "⚠️ Problematico" em cada linha
-- Ao clicar, seta `cliente_problematico = true` e o pedido aparece na secao de problematicos
-- Na secao de problematicos, botao para remover da lista (seta `cliente_problematico = false`)
-- A secao de problematicos mantem os botoes de acao normais (Pago/Perdido)
-
-### Detalhes tecnicos
-
-- A query de PrestesAChegar ja busca pedidos com `pedido_chegou = false`, entao `em_rota` sera apenas um marcador visual sem alterar o fluxo
-- A query de Cobranca ja busca pedidos com `pedido_chegou = true, pedido_pago = false, pedido_perdido = false`, entao `cliente_problematico` sera um filtro adicional para separar visualmente
+Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
 
