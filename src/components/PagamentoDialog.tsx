@@ -24,14 +24,13 @@ export default function PagamentoDialog({ pedido, open, onOpenChange, onSuccess 
   const [contaDestinoId, setContaDestinoId] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Reset fields when dialog opens with a new pedido
-  const handleOpenChange = (isOpen: boolean) => {
-    if (isOpen && pedido) {
+  // Reset fields when pedido changes
+  useEffect(() => {
+    if (open && pedido) {
       setValorPago(String(pedido.valor));
       setContaDestinoId("");
     }
-    onOpenChange(isOpen);
-  };
+  }, [open, pedido]);
 
   const handleConfirm = async () => {
     if (!pedido) return;
