@@ -1,23 +1,33 @@
 
 
-## Linhas alternadas com tons de roxo nas tabelas de pedidos
+## Plan: Pagamento parcial com valor e conta destino
 
-### O que será feito
-Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
+### 1. Migration SQL -- adicionar colunas na tabela `pedidos`
 
-### Abordagem
-A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
+- `valor_pago` (numeric, default 0) -- valor efetivamente recebido
+- `conta_destino_id` (uuid, nullable, FK para finance_accounts) -- conta onde o dinheiro caiu
 
-1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
-2. **Perdidos.tsx**
-3. **Pagos.tsx**
-4. **Prioridade.tsx**
-5. **FaltaChamar.tsx**
-6. **PrestesAChegar.tsx**
+### 2. Componente Dialog de Pagamento (`src/components/PagamentoDialog.tsx`)
 
-### Classes CSS
-- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
-- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
+Novo dialog que abre ao clicar "Pago" em qualquer lugar (Cobranca, Pedidos, etc.):
+- Campo **Valor Pago** (pre-preenchido com o valor total do pedido, editavel)
+- Select **Conta Destino** (lista as contas ativas do usuario via `useFinanceAccounts`)
+- Botoes Confirmar / Cancelar
+- Ao confirmar: atualiza `pedido_pago = true`, `status = "pago"`, `valor_pago`, `conta_destino_id`
 
-Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
+### 3. Atualizar paginas que usam "marcar como pago"
+
+- **Cobranca.tsx**: substituir chamada direta `marcarPago(id)` por abrir o PagamentoDialog
+- **Pedidos.tsx**: o checkbox de `pedido_pago` tambem abre o dialog (apenas ao marcar true)
+- **PrestesAChegar.tsx**: se tiver botao de pago, tambem usar o dialog
+
+### 4. Exibir valor pago na tabela
+
+- Na coluna Valor das tabelas, mostrar o valor pago quando diferente do valor total (ex: "R$ 201,50 (pago: R$ 150,00)")
+
+### Detalhes tecnicos
+
+- O hook `useFinanceAccounts` ja existe e retorna `activeAccounts` com id/name
+- O dialog sera um componente reutilizavel recebendo `pedido`, `open`, `onOpenChange`, `onSuccess`
+- Nao cria transacao financeira automaticamente (apenas registra no pedido para qual conta foi)
 
