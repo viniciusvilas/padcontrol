@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,14 +24,13 @@ export default function PagamentoDialog({ pedido, open, onOpenChange, onSuccess 
   const [contaDestinoId, setContaDestinoId] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Reset fields when dialog opens with a new pedido
-  const handleOpenChange = (isOpen: boolean) => {
-    if (isOpen && pedido) {
+  // Reset fields when pedido changes
+  useEffect(() => {
+    if (open && pedido) {
       setValorPago(String(pedido.valor));
       setContaDestinoId("");
     }
-    onOpenChange(isOpen);
-  };
+  }, [open, pedido]);
 
   const handleConfirm = async () => {
     if (!pedido) return;
@@ -83,7 +82,7 @@ export default function PagamentoDialog({ pedido, open, onOpenChange, onSuccess 
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Registrar Pagamento</DialogTitle>
