@@ -212,7 +212,9 @@ export default function Pedidos() {
                   <TableCell><Checkbox checked={p.pedido_chegou} onCheckedChange={() => toggleField(p, "pedido_chegou")} /></TableCell>
                   <TableCell><Checkbox checked={p.ja_foi_chamado} onCheckedChange={() => toggleField(p, "ja_foi_chamado")} /></TableCell>
                   <TableCell><Checkbox checked={p.cliente_cobrado} onCheckedChange={() => toggleField(p, "cliente_cobrado")} /></TableCell>
-                  <TableCell><Checkbox checked={p.pedido_pago} onCheckedChange={() => toggleField(p, "pedido_pago")} /></TableCell>
+                  <TableCell><Checkbox checked={p.pedido_pago} onCheckedChange={(checked) => {
+                    if (checked) { setPagamentoPedido(p); } else { toggleField(p, "pedido_pago"); }
+                  }} /></TableCell>
                   <TableCell><Checkbox checked={p.pedido_perdido} onCheckedChange={() => toggleField(p, "pedido_perdido")} /></TableCell>
                   <TableCell>
                     <div className="flex gap-1">
