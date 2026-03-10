@@ -183,7 +183,12 @@ export default function Pedidos() {
                     </span>
                   </TableCell>
                   <TableCell>{p.produto}</TableCell>
-                  <TableCell className="whitespace-nowrap">R$ {Number(p.valor).toFixed(2)}</TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    R$ {Number(p.valor).toFixed(2)}
+                    {p.pedido_pago && p.valor_pago > 0 && p.valor_pago !== p.valor && (
+                      <span className="block text-xs text-muted-foreground">(pago: R$ {Number(p.valor_pago).toFixed(2)})</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={p.plataforma === "Five" ? "bg-amber-500/15 text-amber-700 border-amber-200" : "bg-blue-500/15 text-blue-700 border-blue-200"}>{p.plataforma}</Badge>
                   </TableCell>
