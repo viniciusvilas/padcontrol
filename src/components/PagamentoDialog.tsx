@@ -82,7 +82,7 @@ export default function PagamentoDialog({ pedido, open, onOpenChange, onSuccess 
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Registrar Pagamento</DialogTitle>
