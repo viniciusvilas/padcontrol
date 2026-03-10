@@ -52,15 +52,34 @@ export default function PagamentoDialog({ pedido, open, onOpenChange, onSuccess 
     }
 
     const { error } = await supabase.from("pedidos").update(updateData).eq("id", pedido.id);
-    setLoading(false);
 
     if (error) {
+      setLoading(false);
       toast.error("Erro ao registrar pagamento");
-    } else {
-      toast.success("Pagamento registrado!");
-      onOpenChange(false);
-      onSuccess();
+      return;
     }
+
+    // Create income transaction if a destination account was selected
+    if (contaDestinoId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("finance_transactions").insert({
+          user_id: user.id,
+          account_id: contaDestinoId,
+          type: "income" as const,
+          amount: valor,
+          description: `Pagamento: ${pedido.cliente} - ${pedido.produto}`,
+          category: "Pay After Delivery",
+          source: pedido.plataforma,
+          date: new Date().toISOString().split("T")[0],
+        });
+      }
+    }
+
+    setLoading(false);
+    toast.success("Pagamento registrado!");
+    onOpenChange(false);
+    onSuccess();
   };
 
   return (
