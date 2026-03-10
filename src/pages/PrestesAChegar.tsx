@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Pencil, PackageCheck, Copy } from "lucide-react";
+import { Clock, Pencil, PackageCheck, Copy, Truck, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,9 @@ export default function PrestesAChegar() {
     enabled: !!user,
   });
 
+  const emRota = pedidos.filter((p) => (p as any).em_rota);
+  const aguardando = pedidos.filter((p) => !(p as any).em_rota);
+
   const diasRestantes = (previsao: string | null) => {
     if (!previsao) return null;
     const dias = differenceInCalendarDays(parseISO(previsao), new Date());
@@ -53,6 +56,85 @@ export default function PrestesAChegar() {
     else { toast.success("Marcado como chegou!"); refetch(); }
   };
 
+  const toggleEmRota = async (id: string, valor: boolean) => {
+    const { error } = await supabase.from("pedidos").update({ em_rota: valor } as any).eq("id", id);
+    if (error) toast.error("Erro ao atualizar");
+    else { toast.success(valor ? "Marcado como em rota!" : "Removido da rota"); refetch(); }
+  };
+
+  const renderTable = (items: Pedido[], isEmRota: boolean) => (
+    <div className="border rounded-lg overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Previsão</TableHead>
+            <TableHead>Situação</TableHead>
+            <TableHead>Cliente</TableHead>
+            <TableHead>Telefone</TableHead>
+            <TableHead>Produto</TableHead>
+            <TableHead>Rastreio</TableHead>
+            <TableHead>Entrega</TableHead>
+            <TableHead>Estado</TableHead>
+            <TableHead className="w-[160px]">Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {isLoading ? (
+            <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+          ) : items.length === 0 ? (
+            <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nenhum pedido</TableCell></TableRow>
+          ) : (
+            items.map((p, i) => (
+              <TableRow key={p.id} className={isEmRota
+                ? (i % 2 === 0 ? "bg-emerald-50/60 dark:bg-emerald-950/20" : "bg-emerald-100/60 dark:bg-emerald-900/20")
+                : (i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20")
+              }>
+                <TableCell className="whitespace-nowrap">{p.previsao_entrega}</TableCell>
+                <TableCell>{diasRestantes(p.previsao_entrega)}</TableCell>
+                <TableCell className="font-medium">{p.cliente}</TableCell>
+                <TableCell>{p.telefone || "—"}</TableCell>
+                <TableCell>{p.produto}</TableCell>
+                <TableCell className="whitespace-nowrap text-xs">
+                  {p.rastreio ? (
+                    <span className="flex items-center gap-1">
+                      {p.rastreio.startsWith("http") ? (
+                        <a href={p.rastreio} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">Rastrear</a>
+                      ) : p.rastreio}
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(p.rastreio!); toast.success("Link copiado!"); }}>
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </span>
+                  ) : "—"}
+                </TableCell>
+                <TableCell>{p.local_entrega || "—"}</TableCell>
+                <TableCell>{p.estado || "—"}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <Button size="sm" variant="outline" onClick={() => marcarChegou(p.id)} className="gap-1">
+                      <PackageCheck className="h-3.5 w-3.5" /> Chegou
+                    </Button>
+                    {isEmRota ? (
+                      <Button size="sm" variant="ghost" onClick={() => toggleEmRota(p.id, false)} className="gap-1 text-muted-foreground">
+                        <X className="h-3.5 w-3.5" /> Tirar
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" onClick={() => toggleEmRota(p.id, true)} className="gap-1 text-emerald-700 border-emerald-200 hover:bg-emerald-50">
+                        <Truck className="h-3.5 w-3.5" /> Em Rota
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditPedido(p); setFormOpen(true); }}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
@@ -62,62 +144,20 @@ export default function PrestesAChegar() {
       </div>
       <p className="text-muted-foreground mb-4">Pedidos com previsão de entrega nos próximos 3 dias ou atrasados.</p>
 
-      <div className="border rounded-lg overflow-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Previsão</TableHead>
-              <TableHead>Situação</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Telefone</TableHead>
-              <TableHead>Produto</TableHead>
-              <TableHead>Rastreio</TableHead>
-              <TableHead>Entrega</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="w-[60px]">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
-            ) : pedidos.length === 0 ? (
-              <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nenhum pedido prestes a chegar</TableCell></TableRow>
-            ) : (
-              pedidos.map((p, i) => (
-                <TableRow key={p.id} className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}>
-                  <TableCell className="whitespace-nowrap">{p.previsao_entrega}</TableCell>
-                  <TableCell>{diasRestantes(p.previsao_entrega)}</TableCell>
-                  <TableCell className="font-medium">{p.cliente}</TableCell>
-                  <TableCell>{p.telefone || "—"}</TableCell>
-                  <TableCell>{p.produto}</TableCell>
-                  <TableCell className="whitespace-nowrap text-xs">
-                    {p.rastreio ? (
-                      <span className="flex items-center gap-1">
-                        {p.rastreio.startsWith("http") ? (
-                          <a href={p.rastreio} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">Rastrear</a>
-                        ) : p.rastreio}
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(p.rastreio!); toast.success("Link copiado!"); }}>
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </span>
-                    ) : "—"}
-                  </TableCell>
-                  <TableCell>{p.local_entrega || "—"}</TableCell>
-                  <TableCell>{p.estado || "—"}</TableCell>
-                  <TableCell className="flex items-center gap-1">
-                    <Button size="sm" variant="outline" onClick={() => marcarChegou(p.id)} className="gap-1">
-                      <PackageCheck className="h-3.5 w-3.5" /> Chegou
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditPedido(p); setFormOpen(true); }}>
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {emRota.length > 0 && (
+        <>
+          <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+            <Truck className="h-5 w-5 text-emerald-600" /> Em Rota <Badge variant="outline" className="bg-emerald-500/15 text-emerald-700 border-emerald-200">{emRota.length}</Badge>
+          </h2>
+          <p className="text-muted-foreground mb-3 text-sm">Pedidos que estão a caminho da entrega.</p>
+          {renderTable(emRota, true)}
+          <div className="mt-6" />
+        </>
+      )}
+
+      <h2 className="text-lg font-semibold mb-2">Aguardando <Badge variant="outline">{aguardando.length}</Badge></h2>
+      <p className="text-muted-foreground mb-3 text-sm">Pedidos aguardando entrega.</p>
+      {renderTable(aguardando, false)}
 
       <PedidoFormDialog open={formOpen} onOpenChange={setFormOpen} onSuccess={refetch} pedido={editPedido} />
     </div>
