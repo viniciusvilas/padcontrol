@@ -583,10 +583,12 @@ export type Database = {
         Row: {
           cliente: string
           cliente_cobrado: boolean
+          cliente_problematico: boolean
           cpf: string | null
           created_at: string
           data: string
           data_entrega: string | null
+          em_rota: boolean
           estado: string | null
           id: string
           ja_foi_chamado: boolean
@@ -609,10 +611,12 @@ export type Database = {
         Insert: {
           cliente: string
           cliente_cobrado?: boolean
+          cliente_problematico?: boolean
           cpf?: string | null
           created_at?: string
           data?: string
           data_entrega?: string | null
+          em_rota?: boolean
           estado?: string | null
           id?: string
           ja_foi_chamado?: boolean
@@ -635,10 +639,12 @@ export type Database = {
         Update: {
           cliente?: string
           cliente_cobrado?: boolean
+          cliente_problematico?: boolean
           cpf?: string | null
           created_at?: string
           data?: string
           data_entrega?: string | null
+          em_rota?: boolean
           estado?: string | null
           id?: string
           ja_foi_chamado?: boolean
