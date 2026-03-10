@@ -233,6 +233,12 @@ export default function Pedidos() {
         </Table>
       </div>
 
+      <PagamentoDialog
+        pedido={pagamentoPedido}
+        open={!!pagamentoPedido}
+        onOpenChange={(open) => { if (!open) setPagamentoPedido(null); }}
+        onSuccess={refetch}
+      />
       <ImportPedidosDialog open={importOpen} onOpenChange={setImportOpen} onSuccess={refetch} />
       <PedidoFormDialog open={formOpen} onOpenChange={setFormOpen} onSuccess={refetch} pedido={editPedido} />
     </div>
