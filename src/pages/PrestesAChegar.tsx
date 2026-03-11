@@ -33,7 +33,7 @@ export default function PrestesAChegar() {
       return (data as Pedido[]).filter((p) => {
         if (!p.previsao_entrega) return false;
         const dias = differenceInCalendarDays(parseISO(p.previsao_entrega), new Date());
-        return dias <= 3;
+        return dias <= 5;
       });
     },
     enabled: !!user,
