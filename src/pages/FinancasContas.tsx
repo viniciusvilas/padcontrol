@@ -401,9 +401,31 @@ export default function FinancasContas() {
                   <Badge variant="outline" className="text-xs">{acc.type.toUpperCase()}</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">{acc.owner}</p>
-                <p className={`text-xl font-bold ${(acc.computedBalance ?? 0) >= 0 ? "text-success" : "text-destructive"}`}>
-                  R$ {(acc.computedBalance ?? 0).toFixed(2)}
-                </p>
+                {editingBalanceId === acc.id ? (
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-muted-foreground">R$</span>
+                    <Input
+                      autoFocus
+                      className="h-8 w-28 text-base font-bold"
+                      value={editingBalanceValue}
+                      onChange={(e) => setEditingBalanceValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") confirmEditBalance(acc);
+                        if (e.key === "Escape") cancelEditBalance();
+                      }}
+                    />
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-success" onClick={() => confirmEditBalance(acc)}>✓</Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={cancelEditBalance}>✕</Button>
+                  </div>
+                ) : (
+                  <p
+                    className={`text-xl font-bold cursor-pointer hover:underline ${(acc.computedBalance ?? 0) >= 0 ? "text-success" : "text-destructive"}`}
+                    onClick={() => startEditBalance(acc)}
+                    title="Clique para editar o saldo"
+                  >
+                    R$ {(acc.computedBalance ?? 0).toFixed(2)}
+                  </p>
+                )}
                 <div className="flex gap-1 pt-1">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
                     setAccountForm({ id: acc.id, name: acc.name, type: acc.type, owner: acc.owner, color: acc.color, balance: String(acc.balance) });
