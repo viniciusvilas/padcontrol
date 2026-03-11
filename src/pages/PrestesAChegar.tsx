@@ -9,7 +9,29 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { toast } from "sonner";
 import PedidoFormDialog from "@/components/PedidoFormDialog";
 import type { Tables } from "@/integrations/supabase/types";
-import { differenceInCalendarDays, parseISO } from "date-fns";
+import { parseISO, isWeekend, addDays } from "date-fns";
+
+function businessDaysDiff(from: Date, to: Date): number {
+  const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+  if (end >= start) {
+    let count = 0;
+    let current = new Date(start);
+    while (current < end) {
+      current = addDays(current, 1);
+      if (!isWeekend(current)) count++;
+    }
+    return count;
+  } else {
+    let count = 0;
+    let current = new Date(end);
+    while (current < start) {
+      current = addDays(current, 1);
+      if (!isWeekend(current)) count++;
+    }
+    return -count;
+  }
+}
 
 type Pedido = Tables<"pedidos">;
 
