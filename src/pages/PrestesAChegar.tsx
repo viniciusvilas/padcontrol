@@ -66,10 +66,10 @@ export default function PrestesAChegar() {
 
   const diasRestantes = (previsao: string | null) => {
     if (!previsao) return null;
-    const dias = differenceInCalendarDays(parseISO(previsao), new Date());
-    if (dias < 0) return <Badge variant="outline" className="bg-destructive/15 text-destructive border-destructive/20">Atrasado {Math.abs(dias)}d</Badge>;
+    const dias = businessDaysDiff(new Date(), parseISO(previsao));
+    if (dias < 0) return <Badge variant="outline" className="bg-destructive/15 text-destructive border-destructive/20">Atrasado {Math.abs(dias)}d úteis</Badge>;
     if (dias === 0) return <Badge variant="outline" className="bg-amber-500/15 text-amber-700 border-amber-200">Hoje</Badge>;
-    return <Badge variant="outline" className="bg-blue-500/15 text-blue-700 border-blue-200">{dias}d restante{dias > 1 ? "s" : ""}</Badge>;
+    return <Badge variant="outline" className="bg-blue-500/15 text-blue-700 border-blue-200">{dias}d útil{dias > 1 ? "s" : ""}</Badge>;
   };
 
   const marcarChegou = async (id: string) => {
