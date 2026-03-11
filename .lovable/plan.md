@@ -1,23 +1,25 @@
 
 
-## Linhas alternadas com tons de roxo nas tabelas de pedidos
+## Plan: Corrigir RLS -- Converter todas as policies para PERMISSIVE
 
-### O que será feito
-Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
+O problema persiste: **todas as tabelas ainda estao com policies RESTRICTIVE** (`Permissive: No`). A migration anterior nao resolveu porque provavelmente recriou as policies ainda como RESTRICTIVE.
 
-### Abordagem
-A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
+### Acao unica: Migration SQL
 
-1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
-2. **Perdidos.tsx**
-3. **Pagos.tsx**
-4. **Prioridade.tsx**
-5. **FaltaChamar.tsx**
-6. **PrestesAChegar.tsx**
+Dropar e recriar TODAS as policies de TODAS as 16 tabelas usando a sintaxe correta do PostgreSQL para garantir que sejam PERMISSIVE (que e o default do `CREATE POLICY` sem o modificador `AS RESTRICTIVE`).
 
-### Classes CSS
-- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
-- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
+Tabelas afetadas:
+- `pedidos`, `anuncios`, `metas`, `profiles`
+- `finance_accounts`, `finance_bills`, `finance_budgets`, `finance_categories`
+- `finance_distribution_rules`, `finance_envelopes`, `finance_income_sources`
+- `finance_investments`, `finance_receivable_installments`, `finance_receivables`
+- `finance_transactions`, `finance_transfers`
 
-Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
+Para cada tabela:
+1. `DROP POLICY IF EXISTS` nas 4 policies (sel, ins, upd, del)
+2. `CREATE POLICY` sem `AS RESTRICTIVE` (default = PERMISSIVE) com `USING (auth.uid() = user_id)` / `WITH CHECK (auth.uid() = user_id)`
+
+Excecao: `profiles` nao tem policy de DELETE, entao so recria sel, ins, upd.
+
+Nenhuma alteracao de codigo necessaria.
 
