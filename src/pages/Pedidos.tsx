@@ -70,10 +70,13 @@ export default function Pedidos() {
     enabled: !!user,
   });
 
+  const estados = Array.from(new Set(pedidos.map((p) => p.estado).filter(Boolean))).sort() as string[];
+
   const filtered = pedidos.filter((p) => {
     const matchSearch = !search || p.cliente.toLowerCase().includes(search.toLowerCase()) || p.produto.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "todos" || p.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchEstado = estadoFilter === "todos" || p.estado === estadoFilter;
+    return matchSearch && matchStatus && matchEstado;
   });
 
   const pagos = filtered.filter((p) => p.pedido_pago);
