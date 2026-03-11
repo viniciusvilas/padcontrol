@@ -66,6 +66,43 @@ export default function FinancasContas() {
   const [saqueDialog, setSaqueDialog] = useState(false);
   const [saqueForm, setSaqueForm] = useState<TransferForm>({ ...emptyTransferForm, category: "Saque de Plataforma" });
 
+  // Inline balance editing
+  const [editingBalanceId, setEditingBalanceId] = useState<string | null>(null);
+  const [editingBalanceValue, setEditingBalanceValue] = useState("");
+
+  const updateBalanceMutation = useMutation({
+    mutationFn: async ({ acc, desiredBalance }: { acc: FinanceAccount; desiredBalance: number }) => {
+      // Adjust the initial balance so computedBalance matches the desired value
+      // computedBalance = balance + income - expense + transfersIn - transfersOut
+      // newBalance = desiredBalance - (computedBalance - balance)
+      const newInitialBalance = acc.balance + (desiredBalance - acc.computedBalance);
+      const { error } = await supabase.from("finance_accounts").update({ balance: newInitialBalance }).eq("id", acc.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["finance-accounts"] });
+      setEditingBalanceId(null);
+      toast.success("Saldo atualizado!");
+    },
+    onError: () => toast.error("Erro ao atualizar saldo."),
+  });
+
+  const startEditBalance = (acc: FinanceAccount) => {
+    setEditingBalanceId(acc.id);
+    setEditingBalanceValue(String(acc.computedBalance.toFixed(2)));
+  };
+
+  const confirmEditBalance = (acc: FinanceAccount) => {
+    const desired = Number(editingBalanceValue.replace(",", "."));
+    if (isNaN(desired)) { toast.error("Valor inválido"); return; }
+    updateBalanceMutation.mutate({ acc, desiredBalance: desired });
+  };
+
+  const cancelEditBalance = () => {
+    setEditingBalanceId(null);
+    setEditingBalanceValue("");
+  };
+
   // ── Queries ──
   const { data: transfers = [] } = useQuery({
     queryKey: ["finance-transfers", user?.id],
