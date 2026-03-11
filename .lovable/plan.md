@@ -1,23 +1,23 @@
 
 
-## Linhas alternadas com tons de roxo nas tabelas de pedidos
+## Plano: Corrigir filtro para 5 dias úteis
 
-### O que será feito
-Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
+### Alteração
 
-### Abordagem
-A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
+No arquivo `src/pages/PrestesAChegar.tsx`, substituir `differenceInCalendarDays` por uma função que conta apenas dias úteis (seg-sex) entre hoje e a data de previsão.
 
-1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
-2. **Perdidos.tsx**
-3. **Pagos.tsx**
-4. **Prioridade.tsx**
-5. **FaltaChamar.tsx**
-6. **PrestesAChegar.tsx**
+Criar uma função `businessDaysDiff(from: Date, to: Date): number` que itera dia a dia e conta apenas dias que não são sábado/domingo. Usar essa função no filtro ao invés de `differenceInCalendarDays`.
 
-### Classes CSS
-- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
-- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
+A lógica do filtro muda de:
+```ts
+const dias = differenceInCalendarDays(parseISO(p.previsao_entrega), new Date());
+return dias <= 5;
+```
+Para:
+```ts
+const dias = businessDaysDiff(new Date(), parseISO(p.previsao_entrega));
+return dias <= 5; // inclui atrasados (dias negativos)
+```
 
-Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
+Atrasados (previsão no passado) continuam aparecendo normalmente.
 
