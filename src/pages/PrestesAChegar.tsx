@@ -9,7 +9,29 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { toast } from "sonner";
 import PedidoFormDialog from "@/components/PedidoFormDialog";
 import type { Tables } from "@/integrations/supabase/types";
-import { differenceInCalendarDays, parseISO } from "date-fns";
+import { parseISO, isWeekend, addDays } from "date-fns";
+
+function businessDaysDiff(from: Date, to: Date): number {
+  const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+  if (end >= start) {
+    let count = 0;
+    let current = new Date(start);
+    while (current < end) {
+      current = addDays(current, 1);
+      if (!isWeekend(current)) count++;
+    }
+    return count;
+  } else {
+    let count = 0;
+    let current = new Date(end);
+    while (current < start) {
+      current = addDays(current, 1);
+      if (!isWeekend(current)) count++;
+    }
+    return -count;
+  }
+}
 
 type Pedido = Tables<"pedidos">;
 
@@ -32,7 +54,7 @@ export default function PrestesAChegar() {
       if (error) throw error;
       return (data as Pedido[]).filter((p) => {
         if (!p.previsao_entrega) return false;
-        const dias = differenceInCalendarDays(parseISO(p.previsao_entrega), new Date());
+        const dias = businessDaysDiff(new Date(), parseISO(p.previsao_entrega));
         return dias <= 5;
       });
     },
@@ -44,10 +66,10 @@ export default function PrestesAChegar() {
 
   const diasRestantes = (previsao: string | null) => {
     if (!previsao) return null;
-    const dias = differenceInCalendarDays(parseISO(previsao), new Date());
-    if (dias < 0) return <Badge variant="outline" className="bg-destructive/15 text-destructive border-destructive/20">Atrasado {Math.abs(dias)}d</Badge>;
+    const dias = businessDaysDiff(new Date(), parseISO(previsao));
+    if (dias < 0) return <Badge variant="outline" className="bg-destructive/15 text-destructive border-destructive/20">Atrasado {Math.abs(dias)}d úteis</Badge>;
     if (dias === 0) return <Badge variant="outline" className="bg-amber-500/15 text-amber-700 border-amber-200">Hoje</Badge>;
-    return <Badge variant="outline" className="bg-blue-500/15 text-blue-700 border-blue-200">{dias}d restante{dias > 1 ? "s" : ""}</Badge>;
+    return <Badge variant="outline" className="bg-blue-500/15 text-blue-700 border-blue-200">{dias}d útil{dias > 1 ? "s" : ""}</Badge>;
   };
 
   const marcarChegou = async (id: string) => {
