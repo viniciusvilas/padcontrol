@@ -54,7 +54,7 @@ export default function PrestesAChegar() {
       if (error) throw error;
       return (data as Pedido[]).filter((p) => {
         if (!p.previsao_entrega) return false;
-        const dias = differenceInCalendarDays(parseISO(p.previsao_entrega), new Date());
+        const dias = businessDaysDiff(new Date(), parseISO(p.previsao_entrega));
         return dias <= 5;
       });
     },
