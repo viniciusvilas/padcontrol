@@ -46,6 +46,7 @@ export default function Pedidos() {
   const [editPedido, setEditPedido] = useState<Pedido | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
+  const [estadoFilter, setEstadoFilter] = useState("todos");
   const [pagamentoPedido, setPagamentoPedido] = useState<Pedido | null>(null);
 
   const { data: pedidos = [], isLoading, refetch } = useQuery({
@@ -69,10 +70,13 @@ export default function Pedidos() {
     enabled: !!user,
   });
 
+  const estados = Array.from(new Set(pedidos.map((p) => p.estado).filter(Boolean))).sort() as string[];
+
   const filtered = pedidos.filter((p) => {
     const matchSearch = !search || p.cliente.toLowerCase().includes(search.toLowerCase()) || p.produto.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "todos" || p.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchEstado = estadoFilter === "todos" || p.estado === estadoFilter;
+    return matchSearch && matchStatus && matchEstado;
   });
 
   const pagos = filtered.filter((p) => p.pedido_pago);
@@ -113,6 +117,13 @@ export default function Pedidos() {
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]"><Filter className="h-4 w-4 mr-1" /><SelectValue /></SelectTrigger>
           <SelectContent>{STATUS_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+        </Select>
+        <Select value={estadoFilter} onValueChange={setEstadoFilter}>
+          <SelectTrigger className="w-[180px]"><Filter className="h-4 w-4 mr-1" /><SelectValue placeholder="Estado" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os Estados</SelectItem>
+            {estados.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+          </SelectContent>
         </Select>
       </div>
 
