@@ -33,7 +33,7 @@ export default function PrestesAChegar() {
       return (data as Pedido[]).filter((p) => {
         if (!p.previsao_entrega) return false;
         const dias = differenceInCalendarDays(parseISO(p.previsao_entrega), new Date());
-        return dias <= 3;
+        return dias <= 5;
       });
     },
     enabled: !!user,
@@ -142,7 +142,7 @@ export default function PrestesAChegar() {
         <h1 className="text-2xl font-bold">Prestes a Chegar</h1>
         <Badge variant="secondary">{pedidos.length}</Badge>
       </div>
-      <p className="text-muted-foreground mb-4">Pedidos com previsão de entrega nos próximos 3 dias ou atrasados.</p>
+      <p className="text-muted-foreground mb-4">Pedidos com previsão de entrega nos próximos 5 dias úteis ou atrasados.</p>
 
       {emRota.length > 0 && (
         <>
