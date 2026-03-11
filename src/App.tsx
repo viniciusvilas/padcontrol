@@ -29,7 +29,14 @@ import FinancasContas from "./pages/FinancasContas";
 import FinancasAReceber from "./pages/FinancasAReceber";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 1000 * 30,
+    },
+  },
+});
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth();

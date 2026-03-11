@@ -25,9 +25,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, session) => {
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        // For TOKEN_REFRESHED and other events, only update if we have a valid session
+        if (session) {
+          setSession(session);
+          setUser(session.user);
+        }
         setLoading(false);
       }
     );
