@@ -43,6 +43,7 @@ export default function Pedidos() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [importOpen, setImportOpen] = useState(false);
+  const [listaOpen, setListaOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editPedido, setEditPedido] = useState<Pedido | null>(null);
   const [search, setSearch] = useState("");
