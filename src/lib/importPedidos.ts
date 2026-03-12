@@ -1,5 +1,4 @@
-// @ts-ignore - read-excel-file has no type declarations
-import readXlsxFile from "read-excel-file";
+import ExcelJS from "exceljs";
 
 const formatCPF = (value: string) => {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -42,7 +41,6 @@ function parseDate(value: any): string | null {
   if (value instanceof Date) return formatDateISO(value);
 
   if (typeof value === "number") {
-    // Excel serial date
     const epoch = new Date((value - 25569) * 86400 * 1000);
     if (!isNaN(epoch.getTime())) return formatDateISO(epoch);
     return null;
@@ -50,7 +48,6 @@ function parseDate(value: any): string | null {
 
   const str = String(value).trim();
 
-  // dd/mm/yyyy
   const brMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
   if (brMatch) {
     const day = brMatch[1].padStart(2, "0");
@@ -60,7 +57,6 @@ function parseDate(value: any): string | null {
     return `${year}-${month}-${day}`;
   }
 
-  // ISO
   if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
 
   return null;
@@ -101,44 +97,59 @@ function mapStatus(statusCobranca: string | null, ganhoPerda: string | null): { 
   return { status: "criado", pedido_pago: false, pedido_perdido: false };
 }
 
-function rowsToObjects(rows: any[][]): Record<string, any>[] {
-  if (rows.length < 2) return [];
-  const headers = rows[0].map((h) => String(h ?? "").trim());
-  return rows.slice(1).map((row) => {
-    const obj: Record<string, any> = {};
-    headers.forEach((h, i) => {
-      obj[h] = row[i] ?? "";
-    });
-    return obj;
-  });
+function getCellValue(cell: ExcelJS.CellValue): any {
+  if (cell === null || cell === undefined) return "";
+  if (typeof cell === "object" && "result" in cell) return (cell as any).result;
+  if (typeof cell === "object" && "text" in cell) return (cell as any).text;
+  return cell;
 }
 
-export function parseSpreadsheet(file: File): Promise<PedidoImportRow[]> {
-  // For CSV files, parse manually since read-excel-file only handles xlsx
-  if (file.name.toLowerCase().endsWith(".csv")) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const text = e.target!.result as string;
-          const lines = text.split(/\r?\n/).filter((l) => l.trim());
-          const rows = lines.map((line) => line.split(",").map((c) => c.trim()));
-          const objects = rowsToObjects(rows);
-          resolve(processRows(objects));
-        } catch (err) {
-          reject(err);
-        }
-      };
-      reader.onerror = () => reject(new Error("Erro ao ler arquivo"));
-      reader.readAsText(file);
+function sheetToObjects(worksheet: ExcelJS.Worksheet): Record<string, any>[] {
+  const rows: Record<string, any>[] = [];
+  const headerRow = worksheet.getRow(1);
+  const headers: string[] = [];
+
+  headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    headers[colNumber] = String(getCellValue(cell.value) ?? "").trim();
+  });
+
+  worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const obj: Record<string, any> = {};
+    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      const header = headers[colNumber];
+      if (header) obj[header] = getCellValue(cell.value);
     });
+    rows.push(obj);
+  });
+
+  return rows;
+}
+
+export async function parseSpreadsheet(file: File): Promise<PedidoImportRow[]> {
+  // CSV files
+  if (file.name.toLowerCase().endsWith(".csv")) {
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    const csvRows = lines.map((line) => line.split(",").map((c) => c.trim()));
+    if (csvRows.length < 2) return [];
+    const headers = csvRows[0];
+    const objects = csvRows.slice(1).map((row) => {
+      const obj: Record<string, any> = {};
+      headers.forEach((h, i) => { obj[h] = row[i] ?? ""; });
+      return obj;
+    });
+    return processRows(objects);
   }
 
   // XLSX files
-  return readXlsxFile(file).then((rows) => {
-    const objects = rowsToObjects(rows as any[][]);
-    return processRows(objects);
-  });
+  const buffer = await file.arrayBuffer();
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+  const worksheet = workbook.worksheets[0];
+  if (!worksheet) throw new Error("Planilha vazia");
+  const objects = sheetToObjects(worksheet);
+  return processRows(objects);
 }
 
 function processRows(rows: Record<string, any>[]): PedidoImportRow[] {
