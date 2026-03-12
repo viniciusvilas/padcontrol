@@ -1,23 +1,30 @@
 
 
-## Linhas alternadas com tons de roxo nas tabelas de pedidos
+## Plano: Botao global "Recarregar Dados" no header do app
 
-### O que será feito
-Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
+### O que sera feito
 
-### Abordagem
-A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
+Adicionar um botao visivel no header global (`AppLayout.tsx`) que, ao clicar:
 
-1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
-2. **Perdidos.tsx**
-3. **Pagos.tsx**
-4. **Prioridade.tsx**
-5. **FaltaChamar.tsx**
-6. **PrestesAChegar.tsx**
+1. **Invalida e refaz** todas as queries do React Query (financas, pedidos, anuncios, tudo)
+2. Se apos 5 segundos os dados nao voltarem, **faz reload completo da pagina** (fallback F5)
+3. Mostra um toast informando o status ("Recarregando dados..." / "Dados atualizados!")
 
-### Classes CSS
-- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
-- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
+### Detalhes tecnicos
 
-Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
+**Arquivo: `src/components/AppLayout.tsx`**
+- Importar `useQueryClient` do `@tanstack/react-query`
+- Adicionar estado `isRefreshing` para feedback visual (spinner no icone)
+- Criar funcao `handleRefreshAll`:
+  - Chama `queryClient.invalidateQueries()` (sem filtro = invalida TUDO)
+  - Aguarda `queryClient.refetchQueries()` com timeout de 5s
+  - Se o refetch falhar ou estourar o timeout, executa `window.location.reload()`
+  - Mostra toast de sucesso ou fallback
+- Substituir o botao `RefreshCw` existente (que ja faz `window.location.reload()`) por essa logica mais inteligente
+- O icone fica girando (`animate-spin`) enquanto recarrega
+
+O botao ja existe no header (linha 26-30), entao sera apenas uma melhoria do comportamento dele -- nao precisa adicionar elemento novo.
+
+### Arquivos alterados
+- `src/components/AppLayout.tsx` (unico arquivo)
 
