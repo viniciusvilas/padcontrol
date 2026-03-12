@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Upload, Plus, Search, Filter, Pencil, Trash2, Megaphone, Copy } from "lucide-react";
+import { Package, Upload, Plus, Search, Filter, Pencil, Trash2, Megaphone, Copy, Phone } from "lucide-react";
 import PagamentoDialog from "@/components/PagamentoDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImportPedidosDialog from "@/components/ImportPedidosDialog";
 import PedidoFormDialog from "@/components/PedidoFormDialog";
+import ListaTelefonicaDialog from "@/components/ListaTelefonicaDialog";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -42,6 +43,7 @@ export default function Pedidos() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [importOpen, setImportOpen] = useState(false);
+  const [listaOpen, setListaOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editPedido, setEditPedido] = useState<Pedido | null>(null);
   const [search, setSearch] = useState("");
@@ -105,6 +107,7 @@ export default function Pedidos() {
         <div className="flex gap-2">
           <Button onClick={() => { setEditPedido(null); setFormOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Novo Pedido</Button>
           <Button variant="outline" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4 mr-1" /> Importar</Button>
+          <Button variant="outline" onClick={() => setListaOpen(true)}><Phone className="h-4 w-4 mr-1" /> Lista Telefônica</Button>
         </div>
       </div>
 
@@ -252,6 +255,7 @@ export default function Pedidos() {
       />
       <ImportPedidosDialog open={importOpen} onOpenChange={setImportOpen} onSuccess={refetch} />
       <PedidoFormDialog open={formOpen} onOpenChange={setFormOpen} onSuccess={refetch} pedido={editPedido} />
+      <ListaTelefonicaDialog open={listaOpen} onOpenChange={setListaOpen} />
     </div>
   );
 }
