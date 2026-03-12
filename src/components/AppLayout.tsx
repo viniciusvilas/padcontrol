@@ -3,9 +3,33 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { Outlet, useNavigate } from "react-router-dom";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export function AppLayout() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefreshAll = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    toast.info("Recarregando dados...");
+
+    try {
+      await queryClient.invalidateQueries();
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 5000)
+      );
+      await Promise.race([queryClient.refetchQueries(), timeout]);
+      toast.success("Dados atualizados!");
+      setIsRefreshing(false);
+    } catch {
+      toast.info("Recarregando página...");
+      window.location.reload();
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -25,10 +49,11 @@ export function AppLayout() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => window.location.reload()}
-              aria-label="Atualizar página"
+              onClick={handleRefreshAll}
+              disabled={isRefreshing}
+              aria-label="Recarregar dados"
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
             </Button>
           </header>
           <main className="flex-1 p-6 overflow-auto">
