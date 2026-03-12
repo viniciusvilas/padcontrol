@@ -12,6 +12,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImportPedidosDialog from "@/components/ImportPedidosDialog";
 import PedidoFormDialog from "@/components/PedidoFormDialog";
+import ListaTelefonicaDialog from "@/components/ListaTelefonicaDialog";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
