@@ -255,6 +255,7 @@ export default function Pedidos() {
       />
       <ImportPedidosDialog open={importOpen} onOpenChange={setImportOpen} onSuccess={refetch} />
       <PedidoFormDialog open={formOpen} onOpenChange={setFormOpen} onSuccess={refetch} pedido={editPedido} />
+      <ListaTelefonicaDialog open={listaOpen} onOpenChange={setListaOpen} />
     </div>
   );
 }
