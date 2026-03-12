@@ -1,3 +1,4 @@
+// @ts-ignore - read-excel-file has no type declarations
 import readXlsxFile from "read-excel-file";
 
 const formatCPF = (value: string) => {
