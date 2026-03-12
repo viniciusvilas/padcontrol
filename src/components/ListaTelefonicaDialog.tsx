@@ -103,6 +103,17 @@ export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
               </Popover>
             </div>
           </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Plataforma</label>
+            <Select value={plataforma} onValueChange={setPlataforma}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas</SelectItem>
+                <SelectItem value="Five">Five</SelectItem>
+                <SelectItem value="Keed">Keed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Button onClick={handleGerar} disabled={!dateFrom || !dateTo || loading} className="w-full">
             {loading ? "Gerando..." : "Gerar Lista"}
           </Button>
