@@ -27,27 +27,30 @@ interface Props {
 
 export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
   const { user } = useAuth();
-  const [date, setDate] = useState<Date>();
+  const [dateFrom, setDateFrom] = useState<Date>();
+  const [dateTo, setDateTo] = useState<Date>();
   const [lista, setLista] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleGerar = async () => {
-    if (!date || !user) return;
+    if (!dateFrom || !dateTo || !user) return;
     setLoading(true);
-    const dateStr = format(date, "yyyy-MM-dd");
+    const from = format(dateFrom, "yyyy-MM-dd");
+    const to = format(dateTo, "yyyy-MM-dd");
     const { data, error } = await supabase
       .from("pedidos")
       .select("cliente, telefone")
       .eq("user_id", user.id)
-      .eq("data", dateStr);
+      .gte("data", from)
+      .lte("data", to);
     setLoading(false);
     if (error) { toast.error("Erro ao buscar pedidos"); return; }
-    if (!data?.length) { setLista(""); toast.info("Nenhum pedido encontrado nessa data"); return; }
+    if (!data?.length) { setLista(""); toast.info("Nenhum pedido encontrado nesse período"); return; }
     const text = data
       .filter((p) => p.telefone)
       .map((p) => `${p.cliente} / ${fixPhone(p.telefone)}`)
       .join("\n");
-    setLista(text || "Nenhum pedido com telefone nessa data");
+    setLista(text || "Nenhum pedido com telefone nesse período");
   };
 
   const handleCopy = () => {
@@ -64,25 +67,39 @@ export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-1 block">Data do pedido</label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium mb-1 block">De</label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "dd/MM/yyyy") : "Selecione a data"}
+                    {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Início"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={date} onSelect={setDate} initialFocus className="p-3 pointer-events-auto" />
+                  <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className="p-3 pointer-events-auto" />
                 </PopoverContent>
               </Popover>
             </div>
-            <Button onClick={handleGerar} disabled={!date || loading}>
-              {loading ? "Gerando..." : "Gerar Lista"}
-            </Button>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Até</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateTo ? format(dateTo, "dd/MM/yyyy") : "Fim"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
+          <Button onClick={handleGerar} disabled={!dateFrom || !dateTo || loading} className="w-full">
+            {loading ? "Gerando..." : "Gerar Lista"}
+          </Button>
           {lista && (
             <>
               <Textarea readOnly value={lista} rows={10} className="font-mono text-sm" />
