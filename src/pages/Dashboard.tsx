@@ -129,6 +129,13 @@ export default function Dashboard() {
   const budgetDia = Number(cpaDiaBudget) || 0;
   const cpaDia = pedidosHoje > 0 ? budgetDia / pedidosHoje : 0;
 
+  // CPA últimos 7 dias
+  const cutoff7d = subDays(new Date(), 7);
+  const pedidos7d = pedidos.filter((p) => isAfter(parseISO(p.data), cutoff7d) || p.data === format(cutoff7d, "yyyy-MM-dd"));
+  const anuncios7d = anuncios.filter((a) => isAfter(parseISO(a.data), cutoff7d) || a.data === format(cutoff7d, "yyyy-MM-dd"));
+  const investido7d = anuncios7d.reduce((s, a) => s + Number(a.valor_investido), 0);
+  const cpa7d = pedidos7d.length > 0 ? investido7d / pedidos7d.length : 0;
+
   // Inadimplência
   const now = new Date();
   const inadimplentes = filtered.filter((p) =>
