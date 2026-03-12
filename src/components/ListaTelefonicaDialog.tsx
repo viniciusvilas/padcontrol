@@ -39,12 +39,16 @@ export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
     setLoading(true);
     const from = format(dateFrom, "yyyy-MM-dd");
     const to = format(dateTo, "yyyy-MM-dd");
-    const { data, error } = await supabase
+    let query = supabase
       .from("pedidos")
-      .select("cliente, telefone")
+      .select("cliente, telefone, plataforma")
       .eq("user_id", user.id)
       .gte("data", from)
       .lte("data", to);
+    if (plataforma !== "todas") {
+      query = query.eq("plataforma", plataforma);
+    }
+    const { data, error } = await query;
     setLoading(false);
     if (error) { toast.error("Erro ao buscar pedidos"); return; }
     if (!data?.length) { setLista(""); toast.info("Nenhum pedido encontrado nesse período"); return; }
