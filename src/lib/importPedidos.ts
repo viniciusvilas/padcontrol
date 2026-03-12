@@ -1,4 +1,5 @@
-import * as XLSX from "xlsx";
+// @ts-ignore - read-excel-file has no type declarations
+import readXlsxFile from "read-excel-file";
 
 const formatCPF = (value: string) => {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -28,23 +29,27 @@ export interface PedidoImportRow {
   rastreio: string | null;
 }
 
+function formatDateISO(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function parseDate(value: any): string | null {
   if (!value) return null;
-  
-  // Excel serial date number
+
+  if (value instanceof Date) return formatDateISO(value);
+
   if (typeof value === "number") {
-    const date = XLSX.SSF.parse_date_code(value);
-    if (date) {
-      const y = date.y;
-      const m = String(date.m).padStart(2, "0");
-      const d = String(date.d).padStart(2, "0");
-      return `${y}-${m}-${d}`;
-    }
+    // Excel serial date
+    const epoch = new Date((value - 25569) * 86400 * 1000);
+    if (!isNaN(epoch.getTime())) return formatDateISO(epoch);
     return null;
   }
-  
+
   const str = String(value).trim();
-  
+
   // dd/mm/yyyy
   const brMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
   if (brMatch) {
@@ -54,10 +59,10 @@ function parseDate(value: any): string | null {
     if (year.length === 2) year = "20" + year;
     return `${year}-${month}-${day}`;
   }
-  
+
   // ISO
   if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
-  
+
   return null;
 }
 
@@ -80,7 +85,7 @@ function parseNumber(value: any): number {
 function mapStatus(statusCobranca: string | null, ganhoPerda: string | null): { status: string; pedido_pago: boolean; pedido_perdido: boolean } {
   const gp = (ganhoPerda || "").trim().toUpperCase();
   const sc = (statusCobranca || "").trim().toUpperCase();
-  
+
   if (gp === "GANHO" || sc === "PAGO") {
     return { status: "pago", pedido_pago: true, pedido_perdido: false };
   }
@@ -96,58 +101,82 @@ function mapStatus(statusCobranca: string | null, ganhoPerda: string | null): { 
   return { status: "criado", pedido_pago: false, pedido_perdido: false };
 }
 
-export function parseSpreadsheet(file: File): Promise<PedidoImportRow[]> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target!.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: "array", cellDates: false });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-        
-        const parsed: PedidoImportRow[] = [];
-        
-        for (const row of rows) {
-          const cliente = String(row["NOME"] || "").trim();
-          const valor = parseNumber(row["VALOR"]);
-          
-          if (!cliente || valor <= 0) continue;
-          
-          const statusInfo = mapStatus(
-            row["STATUS_DA_COBRANCA"] || row["STATUS DA COBRANCA"] || null,
-            row["GANHO_OU_PERDA"] || row["GANHO OU PERDA"] || null
-          );
-          
-          const rawCpf = row["CPF"] ? String(row["CPF"]).trim() : "";
-          const cpf = rawCpf ? formatCPF(rawCpf) : null;
-
-          parsed.push({
-            cliente,
-            valor,
-            produto: String(row["TICKET"] || "T1").trim(),
-            telefone: row["NUMERO"] ? String(row["NUMERO"]).trim() : null,
-            local_entrega: row["ENTREGA"] ? String(row["ENTREGA"]).trim() : null,
-            prazo: parseInt(String(row["DIAS_UTEIS"] || row["DIAS UTEIS"] || "15")) || 15,
-            data: parseDate(row["DATA"]) || new Date().toISOString().slice(0, 10),
-            previsao_entrega: parseDate(row["PREVISAO_CHEGADA"] || row["PREVISAO CHEGADA"]),
-            pedido_chegou: parseBool(row["JA_CHEGOU?"] || row["JA CHEGOU?"]),
-            ja_foi_chamado: parseBool(row["JA_FOI_CHAMADO"] || row["JA FOI CHAMADO"]),
-            cliente_cobrado: parseBool(row["JA_FOI_COBRADO"] || row["JA FOI COBRADO"]),
-            cpf,
-            rastreio: cpf && cpf.replace(/\D/g, "").length === 11
-              ? `https://app.arcologistica.com.br/tracking?type=document&query=${cpf}`
-              : null,
-            ...statusInfo,
-          });
-        }
-        
-        resolve(parsed);
-      } catch (err) {
-        reject(err);
-      }
-    };
-    reader.onerror = () => reject(new Error("Erro ao ler arquivo"));
-    reader.readAsArrayBuffer(file);
+function rowsToObjects(rows: any[][]): Record<string, any>[] {
+  if (rows.length < 2) return [];
+  const headers = rows[0].map((h) => String(h ?? "").trim());
+  return rows.slice(1).map((row) => {
+    const obj: Record<string, any> = {};
+    headers.forEach((h, i) => {
+      obj[h] = row[i] ?? "";
+    });
+    return obj;
   });
+}
+
+export function parseSpreadsheet(file: File): Promise<PedidoImportRow[]> {
+  // For CSV files, parse manually since read-excel-file only handles xlsx
+  if (file.name.toLowerCase().endsWith(".csv")) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const text = e.target!.result as string;
+          const lines = text.split(/\r?\n/).filter((l) => l.trim());
+          const rows = lines.map((line) => line.split(",").map((c) => c.trim()));
+          const objects = rowsToObjects(rows);
+          resolve(processRows(objects));
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = () => reject(new Error("Erro ao ler arquivo"));
+      reader.readAsText(file);
+    });
+  }
+
+  // XLSX files
+  return readXlsxFile(file).then((rows) => {
+    const objects = rowsToObjects(rows as any[][]);
+    return processRows(objects);
+  });
+}
+
+function processRows(rows: Record<string, any>[]): PedidoImportRow[] {
+  const parsed: PedidoImportRow[] = [];
+
+  for (const row of rows) {
+    const cliente = String(row["NOME"] || "").trim();
+    const valor = parseNumber(row["VALOR"]);
+
+    if (!cliente || valor <= 0) continue;
+
+    const statusInfo = mapStatus(
+      row["STATUS_DA_COBRANCA"] || row["STATUS DA COBRANCA"] || null,
+      row["GANHO_OU_PERDA"] || row["GANHO OU PERDA"] || null
+    );
+
+    const rawCpf = row["CPF"] ? String(row["CPF"]).trim() : "";
+    const cpf = rawCpf ? formatCPF(rawCpf) : null;
+
+    parsed.push({
+      cliente,
+      valor,
+      produto: String(row["TICKET"] || "T1").trim(),
+      telefone: row["NUMERO"] ? String(row["NUMERO"]).trim() : null,
+      local_entrega: row["ENTREGA"] ? String(row["ENTREGA"]).trim() : null,
+      prazo: parseInt(String(row["DIAS_UTEIS"] || row["DIAS UTEIS"] || "15")) || 15,
+      data: parseDate(row["DATA"]) || new Date().toISOString().slice(0, 10),
+      previsao_entrega: parseDate(row["PREVISAO_CHEGADA"] || row["PREVISAO CHEGADA"]),
+      pedido_chegou: parseBool(row["JA_CHEGOU?"] || row["JA CHEGOU?"]),
+      ja_foi_chamado: parseBool(row["JA_FOI_CHAMADO"] || row["JA FOI CHAMADO"]),
+      cliente_cobrado: parseBool(row["JA_FOI_COBRADO"] || row["JA FOI COBRADO"]),
+      cpf,
+      rastreio: cpf && cpf.replace(/\D/g, "").length === 11
+        ? `https://app.arcologistica.com.br/tracking?type=document&query=${cpf}`
+        : null,
+      ...statusInfo,
+    });
+  }
+
+  return parsed;
 }

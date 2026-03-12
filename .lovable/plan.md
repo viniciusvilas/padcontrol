@@ -1,21 +1,23 @@
 
 
-## Plano: Corrigir vulnerabilidade do pacote `xlsx`
+## Linhas alternadas com tons de roxo nas tabelas de pedidos
 
-### Problema
-O pacote `xlsx` (SheetJS) na versao `^0.18.5` tem vulnerabilidades conhecidas (Prototype Pollution e ReDoS). O pacote no npm esta abandonado e nao recebe correcoes.
+### O que será feito
+Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
 
-### Solucao
+### Abordagem
+A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
 
-O uso do `xlsx` e limitado a um unico arquivo (`src/lib/importPedidos.ts`) para importar planilhas. A abordagem mais segura e migrar para o **SheetJS CE** distribuido diretamente pelo projeto (pacote `xlsx` na versao mais recente do CDN) ou, preferencialmente, usar a alternativa **`read-excel-file`** que e mantida ativamente e nao tem vulnerabilidades conhecidas.
+1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
+2. **Perdidos.tsx**
+3. **Pagos.tsx**
+4. **Prioridade.tsx**
+5. **FaltaChamar.tsx**
+6. **PrestesAChegar.tsx**
 
-Porem, a opcao mais simples e pragmatica: o `xlsx` na versao do npm e a unica que suporta tanto `.xlsx` quanto `.csv` com a mesma API. A alternativa com menor impacto e:
+### Classes CSS
+- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
+- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
 
-1. **Remover o pacote `xlsx`** do `package.json`
-2. **Instalar `read-excel-file`** (pacote leve, sem vulnerabilidades)
-3. **Reescrever `src/lib/importPedidos.ts`** para usar `read-excel-file` — a logica de parsing (mapeamento de colunas, correcao de datas, etc.) permanece igual, apenas a leitura do arquivo muda
-
-### Arquivos alterados
-- `package.json` — trocar `xlsx` por `read-excel-file`
-- `src/lib/importPedidos.ts` — adaptar import e leitura do arquivo
+Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
 
