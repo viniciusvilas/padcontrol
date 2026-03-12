@@ -32,6 +32,7 @@ export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
   const [dateTo, setDateTo] = useState<Date>();
   const [lista, setLista] = useState("");
   const [loading, setLoading] = useState(false);
+  const [plataforma, setPlataforma] = useState("todas");
 
   const handleGerar = async () => {
     if (!dateFrom || !dateTo || !user) return;
