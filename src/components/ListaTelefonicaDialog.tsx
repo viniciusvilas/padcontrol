@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
@@ -31,18 +32,23 @@ export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
   const [dateTo, setDateTo] = useState<Date>();
   const [lista, setLista] = useState("");
   const [loading, setLoading] = useState(false);
+  const [plataforma, setPlataforma] = useState("todas");
 
   const handleGerar = async () => {
     if (!dateFrom || !dateTo || !user) return;
     setLoading(true);
     const from = format(dateFrom, "yyyy-MM-dd");
     const to = format(dateTo, "yyyy-MM-dd");
-    const { data, error } = await supabase
+    let query = supabase
       .from("pedidos")
-      .select("cliente, telefone")
+      .select("cliente, telefone, plataforma")
       .eq("user_id", user.id)
       .gte("data", from)
       .lte("data", to);
+    if (plataforma !== "todas") {
+      query = query.eq("plataforma", plataforma);
+    }
+    const { data, error } = await query;
     setLoading(false);
     if (error) { toast.error("Erro ao buscar pedidos"); return; }
     if (!data?.length) { setLista(""); toast.info("Nenhum pedido encontrado nesse período"); return; }
@@ -96,6 +102,17 @@ export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
                 </PopoverContent>
               </Popover>
             </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Plataforma</label>
+            <Select value={plataforma} onValueChange={setPlataforma}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas</SelectItem>
+                <SelectItem value="Five">Five</SelectItem>
+                <SelectItem value="Keed">Keed</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Button onClick={handleGerar} disabled={!dateFrom || !dateTo || loading} className="w-full">
             {loading ? "Gerando..." : "Gerar Lista"}
