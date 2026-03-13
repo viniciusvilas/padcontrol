@@ -105,7 +105,9 @@ export default function Dashboard() {
   const qtdPedidos = filtered.length;
   const qtdPagos = pagos.length;
   const qtdEntregues = filtered.filter((p) => p.pedido_chegou).length;
-  const qtdAguardandoPgto = filtered.filter((p) => p.pedido_chegou && !p.pedido_pago && !p.pedido_perdido).length;
+  const aguardandoPgtoList = filtered.filter((p) => p.pedido_chegou && !p.pedido_pago && !p.pedido_perdido);
+  const qtdAguardandoPgto = aguardandoPgtoList.length;
+  const valorPendente = aguardandoPgtoList.reduce((s, p) => s + Number(p.valor), 0);
   const qtdPrioridade = filtered.filter((p) => p.cliente_cobrado && !p.pedido_pago && !p.pedido_perdido).length;
   const totalInvestido = filteredAnuncios.reduce((s, a) => s + Number(a.valor_investido), 0);
   const faturamentoPagos = pagos.reduce((s, p) => s + Number(p.valor), 0);
