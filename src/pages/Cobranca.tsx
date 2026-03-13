@@ -68,6 +68,7 @@ export default function Cobranca() {
             <TableHead>Telefone</TableHead>
             <TableHead>Produto</TableHead>
             <TableHead>Valor</TableHead>
+            <TableHead>Observação</TableHead>
             <TableHead>Plataforma</TableHead>
             <TableHead className="w-[280px]">Ações</TableHead>
           </TableRow>
