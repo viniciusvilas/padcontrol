@@ -105,7 +105,9 @@ export default function Dashboard() {
   const qtdPedidos = filtered.length;
   const qtdPagos = pagos.length;
   const qtdEntregues = filtered.filter((p) => p.pedido_chegou).length;
-  const qtdAguardandoPgto = filtered.filter((p) => p.pedido_chegou && !p.pedido_pago && !p.pedido_perdido).length;
+  const aguardandoPgtoList = filtered.filter((p) => p.pedido_chegou && !p.pedido_pago && !p.pedido_perdido);
+  const qtdAguardandoPgto = aguardandoPgtoList.length;
+  const valorPendente = aguardandoPgtoList.reduce((s, p) => s + Number(p.valor), 0);
   const qtdPrioridade = filtered.filter((p) => p.cliente_cobrado && !p.pedido_pago && !p.pedido_perdido).length;
   const totalInvestido = filteredAnuncios.reduce((s, a) => s + Number(a.valor_investido), 0);
   const faturamentoPagos = pagos.reduce((s, p) => s + Number(p.valor), 0);
@@ -262,6 +264,7 @@ export default function Dashboard() {
         <MetricCard title="Pedidos Entregues" icon={Truck} value={String(qtdEntregues)} className="text-primary" />
         <MetricCard title="Pedidos Keed" icon={Package} value={String(qtdKeed)} />
         <MetricCard title="Aguardando Pgto" icon={Truck} value={String(qtdAguardandoPgto)} />
+        <MetricCard title="Valor Pendente" icon={DollarSign} value={`R$ ${valorPendente.toFixed(2)}`} subtitle={`${qtdAguardandoPgto} pedidos aguardando`} className="text-destructive" />
         <MetricCard title="Em Prioridade" icon={AlertTriangle} value={String(qtdPrioridade)} />
         <MetricCard title="CPA Médio" icon={Target} value={`R$ ${cpaMedio.toFixed(2)}`} />
         <MetricCard title="CPA 7 dias" icon={Target} value={`R$ ${cpa7d.toFixed(2)}`} subtitle={`${pedidos7d.length} pedidos · R$ ${investido7d.toFixed(2)} investido`} />
