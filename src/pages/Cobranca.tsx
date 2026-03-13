@@ -15,6 +15,15 @@ type Pedido = Tables<"pedidos">;
 export default function Cobranca() {
   const { user } = useAuth();
   const [pagamentoPedido, setPagamentoPedido] = useState<Pedido | null>(null);
+  const [editingObs, setEditingObs] = useState<string | null>(null);
+  const [obsValue, setObsValue] = useState("");
+
+  const salvarObservacao = async (id: string) => {
+    const { error } = await supabase.from("pedidos").update({ observacoes: obsValue }).eq("id", id);
+    if (error) toast.error("Erro ao salvar observação");
+    else { toast.success("Observação salva!"); refetch(); }
+    setEditingObs(null);
+  };
 
   const { data: pedidos = [], isLoading, refetch } = useQuery({
     queryKey: ["pedidos-cobranca", user?.id],
