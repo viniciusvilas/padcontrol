@@ -68,15 +68,16 @@ export default function Cobranca() {
             <TableHead>Telefone</TableHead>
             <TableHead>Produto</TableHead>
             <TableHead>Valor</TableHead>
+            <TableHead>Observação</TableHead>
             <TableHead>Plataforma</TableHead>
             <TableHead className="w-[280px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
-            <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+            <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
           ) : items.length === 0 ? (
-            <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum pedido</TableCell></TableRow>
+            <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nenhum pedido</TableCell></TableRow>
           ) : (
             items.map((p, i) => (
               <TableRow key={p.id} className={isProblematico
@@ -89,6 +90,15 @@ export default function Cobranca() {
                 <TableCell>{p.telefone || "—"}</TableCell>
                 <TableCell>{p.produto}</TableCell>
                 <TableCell>R$ {Number(p.valor).toFixed(2)}</TableCell>
+                <TableCell>
+                  {p.observacoes ? (
+                    <div className="max-w-[200px] rounded-md border border-amber-200 bg-amber-50/80 dark:border-amber-800 dark:bg-amber-950/40 px-2 py-1 text-xs text-amber-800 dark:text-amber-300 whitespace-pre-wrap break-words">
+                      {p.observacoes}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">—</span>
+                  )}
+                </TableCell>
                 <TableCell>{p.plataforma}</TableCell>
                 <TableCell>
                   <div className="flex gap-1 flex-wrap">
