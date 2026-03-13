@@ -89,6 +89,15 @@ export default function Cobranca() {
                 <TableCell>{p.telefone || "—"}</TableCell>
                 <TableCell>{p.produto}</TableCell>
                 <TableCell>R$ {Number(p.valor).toFixed(2)}</TableCell>
+                <TableCell>
+                  {p.observacoes ? (
+                    <div className="max-w-[200px] rounded-md border border-amber-200 bg-amber-50/80 dark:border-amber-800 dark:bg-amber-950/40 px-2 py-1 text-xs text-amber-800 dark:text-amber-300 whitespace-pre-wrap break-words">
+                      {p.observacoes}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">—</span>
+                  )}
+                </TableCell>
                 <TableCell>{p.plataforma}</TableCell>
                 <TableCell>
                   <div className="flex gap-1 flex-wrap">
