@@ -15,6 +15,15 @@ type Pedido = Tables<"pedidos">;
 export default function Cobranca() {
   const { user } = useAuth();
   const [pagamentoPedido, setPagamentoPedido] = useState<Pedido | null>(null);
+  const [editingObs, setEditingObs] = useState<string | null>(null);
+  const [obsValue, setObsValue] = useState("");
+
+  const salvarObservacao = async (id: string) => {
+    const { error } = await supabase.from("pedidos").update({ observacoes: obsValue }).eq("id", id);
+    if (error) toast.error("Erro ao salvar observação");
+    else { toast.success("Observação salva!"); refetch(); }
+    setEditingObs(null);
+  };
 
   const { data: pedidos = [], isLoading, refetch } = useQuery({
     queryKey: ["pedidos-cobranca", user?.id],
@@ -91,12 +100,29 @@ export default function Cobranca() {
                 <TableCell>{p.produto}</TableCell>
                 <TableCell>R$ {Number(p.valor).toFixed(2)}</TableCell>
                 <TableCell>
-                  {p.observacoes ? (
-                    <div className="max-w-[200px] rounded-md border border-amber-200 bg-amber-50/80 dark:border-amber-800 dark:bg-amber-950/40 px-2 py-1 text-xs text-amber-800 dark:text-amber-300 whitespace-pre-wrap break-words">
-                      {p.observacoes}
+                  {editingObs === p.id ? (
+                    <div className="flex flex-col gap-1 max-w-[200px]">
+                      <textarea
+                        className="w-full rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                        rows={3}
+                        value={obsValue}
+                        onChange={(e) => setObsValue(e.target.value)}
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); salvarObservacao(p.id); } if (e.key === "Escape") setEditingObs(null); }}
+                      />
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="outline" className="h-6 text-xs px-2" onClick={() => salvarObservacao(p.id)}>Salvar</Button>
+                        <Button size="sm" variant="ghost" className="h-6 text-xs px-2" onClick={() => setEditingObs(null)}>Cancelar</Button>
+                      </div>
                     </div>
                   ) : (
-                    <span className="text-muted-foreground text-xs">—</span>
+                    <div
+                      className="max-w-[200px] rounded-md border border-amber-200 bg-amber-50/80 dark:border-amber-800 dark:bg-amber-950/40 px-2 py-1 text-xs text-amber-800 dark:text-amber-300 whitespace-pre-wrap break-words cursor-pointer hover:opacity-80 min-h-[24px]"
+                      title="Clique para editar"
+                      onClick={() => { setEditingObs(p.id); setObsValue(p.observacoes || ""); }}
+                    >
+                      {p.observacoes || <span className="text-muted-foreground italic">Adicionar obs...</span>}
+                    </div>
                   )}
                 </TableCell>
                 <TableCell>{p.plataforma}</TableCell>
