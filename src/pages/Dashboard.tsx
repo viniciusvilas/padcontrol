@@ -264,6 +264,7 @@ export default function Dashboard() {
         <MetricCard title="Pedidos Entregues" icon={Truck} value={String(qtdEntregues)} className="text-primary" />
         <MetricCard title="Pedidos Keed" icon={Package} value={String(qtdKeed)} />
         <MetricCard title="Aguardando Pgto" icon={Truck} value={String(qtdAguardandoPgto)} />
+        <MetricCard title="Valor Pendente" icon={DollarSign} value={`R$ ${valorPendente.toFixed(2)}`} subtitle={`${qtdAguardandoPgto} pedidos aguardando`} className="text-destructive" />
         <MetricCard title="Em Prioridade" icon={AlertTriangle} value={String(qtdPrioridade)} />
         <MetricCard title="CPA Médio" icon={Target} value={`R$ ${cpaMedio.toFixed(2)}`} />
         <MetricCard title="CPA 7 dias" icon={Target} value={`R$ ${cpa7d.toFixed(2)}`} subtitle={`${pedidos7d.length} pedidos · R$ ${investido7d.toFixed(2)} investido`} />
