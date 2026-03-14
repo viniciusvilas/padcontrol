@@ -151,8 +151,8 @@ export default function Dashboard() {
   const cpa7d = pedidos7d.length > 0 ? investido7d / pedidos7d.length : 0;
 
   // Valor pago últimos 7 dias
-  const pedidosPagos7d = pedidos.filter((p) => p.pedido_pago && (isAfter(parseISO(p.data), cutoff7d) || p.data === format(cutoff7d, "yyyy-MM-dd")));
-  const valorPago7d = pedidosPagos7d.reduce((s, p) => s + Number(p.valor_pago), 0);
+  const pedidosPagos7d = pedidos.filter((p) => p.pedido_pago && isAfter(parseISO(p.updated_at), cutoff7d));
+  const valorPago7d = pedidosPagos7d.reduce((s, p) => s + (Number(p.valor_pago) || Number(p.valor)), 0);
 
   // Inadimplência
   const now = new Date();
