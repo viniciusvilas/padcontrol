@@ -44,7 +44,8 @@ export default function Cobranca() {
   });
 
   const problematicos = pedidos.filter((p) => p.cliente_problematico);
-  const normais = pedidos.filter((p) => !p.cliente_problematico);
+  const normais = pedidos.filter((p) => !p.cliente_problematico && p.plataforma !== "Five");
+  const fivePedidos = pedidos.filter((p) => !p.cliente_problematico && p.plataforma === "Five");
   const naoCobrados = normais.filter((p) => !p.cliente_cobrado);
   const cobrados = normais.filter((p) => p.cliente_cobrado);
 
