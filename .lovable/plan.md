@@ -1,23 +1,25 @@
 
 
-## Linhas alternadas com tons de roxo nas tabelas de pedidos
+## Problema Identificado
 
-### O que será feito
-Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
+O card **"Valor Pago 7 dias"** filtra pedidos pagos pela **data de criação do pedido** (`p.data`), não pela **data em que o pagamento foi registrado**. Um pedido criado há 30 dias mas pago ontem não aparece no cálculo.
 
-### Abordagem
-A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
+Além disso, pedidos antigos marcados como pagos antes da implementação do diálogo de pagamento têm `valor_pago = 0`, fazendo o valor total aparecer menor que o real.
 
-1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
-2. **Perdidos.tsx**
-3. **Pagos.tsx**
-4. **Prioridade.tsx**
-5. **FaltaChamar.tsx**
-6. **PrestesAChegar.tsx**
+## Correção
 
-### Classes CSS
-- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
-- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
+No `src/pages/Dashboard.tsx`, alterar a lógica do "Valor Pago 7 dias":
 
-Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
+1. **Filtrar por `updated_at`** ao invés de `data` para pedidos pagos, pois `updated_at` é atualizado quando o pagamento é registrado
+2. **Usar `valor` como fallback** quando `valor_pago` for 0, já que pedidos antigos podem não ter esse campo preenchido
+
+```text
+Antes:  filtra por p.data (data de criação)
+Depois: filtra por p.updated_at (data de atualização/pagamento)
+
+Antes:  soma apenas valor_pago (pode ser 0)
+Depois: soma valor_pago || valor (fallback)
+```
+
+Mudança restrita a ~4 linhas no arquivo `src/pages/Dashboard.tsx`.
 
