@@ -282,9 +282,11 @@ export default function Dashboard() {
         <MetricCard title="CPA 7 dias" icon={Target} value={`R$ ${cpa7d.toFixed(2)}`} subtitle={`${pedidos7d.length} pedidos · R$ ${investido7d.toFixed(2)} investido`} />
       </div>
 
-      {/* CPA do Dia + Inadimplência + ROIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+      {/* CPA do Dia + Inadimplência + ROIs + Valor Ontem + Valor Semana */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
         <MetricCard title="Valor Hoje" icon={DollarSign} value={`R$ ${valorHoje.toFixed(2)}`} subtitle={`${pedidosHoje} pedidos`} className="text-primary" />
+        <MetricCard title="Valor Ontem" icon={DollarSign} value={`R$ ${valorOntem.toFixed(2)}`} subtitle={`${pedidosOntem} pedidos`} />
+        <MetricCard title="Valor da Semana" icon={DollarSign} value={`R$ ${valorSemana.toFixed(2)}`} subtitle={`${pedidosSemana} pedidos (7 dias)`} className="text-primary" />
         <Card>
           <CardHeader className="pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">CPA do Dia</CardTitle>
