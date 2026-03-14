@@ -271,7 +271,7 @@ export default function Dashboard() {
         <MetricCard title="Valor Agendado (Total)" icon={Package} value={`R$ ${valorAgendadoTotal.toFixed(2)}`} />
         <MetricCard title="Faturamento Pagos" icon={DollarSign} value={`R$ ${faturamentoPagos.toFixed(2)}`} className="text-primary" />
         <MetricCard title="Agendado (s/ Pagos)" icon={Package} value={`R$ ${valorAgendadoSemPagos.toFixed(2)}`} />
-        <MetricCard title="Investimento Anúncios" icon={Megaphone} value={`R$ ${totalInvestido.toFixed(2)}`} className="text-destructive" />
+        <MetricCard title="Investimento Anúncios" icon={Megaphone} value={`R$ ${totalInvestido.toFixed(2)}`} subtitle={`c/ imposto: R$ ${(totalInvestido * 1.125).toFixed(2)}`} className="text-destructive" />
         <MetricCard title="Frete Pendente" icon={Truck} value={`R$ ${gastoFreteReal.toFixed(2)}`} subtitle={`${fiveNaoPagos} não pagos · R$ ${freteDevolvido.toFixed(2)} devolvido (${fivePagos} pagos)`} className="text-destructive" />
       </div>
 
