@@ -150,6 +150,10 @@ export default function Dashboard() {
   const investido7d = anuncios7d.reduce((s, a) => s + Number(a.valor_investido), 0);
   const cpa7d = pedidos7d.length > 0 ? investido7d / pedidos7d.length : 0;
 
+  // Valor pago últimos 7 dias
+  const pedidosPagos7d = pedidos.filter((p) => p.pedido_pago && (isAfter(parseISO(p.data), cutoff7d) || p.data === format(cutoff7d, "yyyy-MM-dd")));
+  const valorPago7d = pedidosPagos7d.reduce((s, p) => s + Number(p.valor_pago), 0);
+
   // Inadimplência
   const now = new Date();
   const inadimplentes = filtered.filter((p) =>
@@ -280,6 +284,7 @@ export default function Dashboard() {
         <MetricCard title="Em Prioridade" icon={AlertTriangle} value={String(qtdPrioridade)} />
         <MetricCard title="CPA Médio" icon={Target} value={`R$ ${cpaMedio.toFixed(2)}`} />
         <MetricCard title="CPA 7 dias" icon={Target} value={`R$ ${cpa7d.toFixed(2)}`} subtitle={`${pedidos7d.length} pedidos · R$ ${investido7d.toFixed(2)} investido`} />
+        <MetricCard title="Valor Pago 7 dias" icon={DollarSign} value={`R$ ${valorPago7d.toFixed(2)}`} subtitle={`${pedidosPagos7d.length} pedidos pagos`} className="text-primary" />
       </div>
 
       {/* Valor Hoje + Ontem + Semana */}
