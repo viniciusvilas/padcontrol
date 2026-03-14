@@ -154,6 +154,9 @@ export default function Dashboard() {
   const pedidosPagos7d = pedidos.filter((p) => p.pedido_pago && isAfter(parseISO(p.updated_at), cutoff7d));
   const valorPago7d = pedidosPagos7d.reduce((s, p) => s + (Number(p.valor_pago) || Number(p.valor)), 0);
 
+  // Investimento anúncios últimos 7 dias
+  const investidoAnuncios7d = anuncios7d.reduce((s, a) => s + Number(a.valor_investido), 0);
+
   // Inadimplência
   const now = new Date();
   const inadimplentes = filtered.filter((p) =>
@@ -268,7 +271,7 @@ export default function Dashboard() {
         <MetricCard title="Valor Agendado (Total)" icon={Package} value={`R$ ${valorAgendadoTotal.toFixed(2)}`} />
         <MetricCard title="Faturamento Pagos" icon={DollarSign} value={`R$ ${faturamentoPagos.toFixed(2)}`} className="text-primary" />
         <MetricCard title="Agendado (s/ Pagos)" icon={Package} value={`R$ ${valorAgendadoSemPagos.toFixed(2)}`} />
-        <MetricCard title="Investimento Anúncios" icon={Megaphone} value={`R$ ${totalInvestido.toFixed(2)}`} className="text-destructive" />
+        <MetricCard title="Investimento Anúncios" icon={Megaphone} value={`R$ ${totalInvestido.toFixed(2)}`} subtitle={`c/ imposto: R$ ${(totalInvestido * 1.125).toFixed(2)}`} className="text-destructive" />
         <MetricCard title="Frete Pendente" icon={Truck} value={`R$ ${gastoFreteReal.toFixed(2)}`} subtitle={`${fiveNaoPagos} não pagos · R$ ${freteDevolvido.toFixed(2)} devolvido (${fivePagos} pagos)`} className="text-destructive" />
       </div>
 
@@ -285,6 +288,7 @@ export default function Dashboard() {
         <MetricCard title="CPA Médio" icon={Target} value={`R$ ${cpaMedio.toFixed(2)}`} />
         <MetricCard title="CPA 7 dias" icon={Target} value={`R$ ${cpa7d.toFixed(2)}`} subtitle={`${pedidos7d.length} pedidos · R$ ${investido7d.toFixed(2)} investido`} />
         <MetricCard title="Valor Pago 7 dias" icon={DollarSign} value={`R$ ${valorPago7d.toFixed(2)}`} subtitle={`${pedidosPagos7d.length} pedidos pagos`} className="text-primary" />
+        <MetricCard title="Anúncios 7 dias" icon={Megaphone} value={`R$ ${investidoAnuncios7d.toFixed(2)}`} subtitle={`${anuncios7d.length} dias com investimento`} className="text-destructive" />
       </div>
 
       {/* Valor Hoje + Ontem + Semana */}
