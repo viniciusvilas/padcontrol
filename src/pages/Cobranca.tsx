@@ -44,7 +44,8 @@ export default function Cobranca() {
   });
 
   const problematicos = pedidos.filter((p) => p.cliente_problematico);
-  const normais = pedidos.filter((p) => !p.cliente_problematico);
+  const normais = pedidos.filter((p) => !p.cliente_problematico && p.plataforma !== "Five");
+  const fivePedidos = pedidos.filter((p) => !p.cliente_problematico && p.plataforma === "Five");
   const naoCobrados = normais.filter((p) => !p.cliente_cobrado);
   const cobrados = normais.filter((p) => p.cliente_cobrado);
 
@@ -172,6 +173,16 @@ export default function Cobranca() {
       <h2 className="text-lg font-semibold mt-8 mb-2">Já Cobrados <Badge variant="outline">{cobrados.length}</Badge></h2>
       <p className="text-muted-foreground mb-3 text-sm">Pedidos já cobrados aguardando pagamento.</p>
       {renderTable(cobrados, false)}
+
+      {fivePedidos.length > 0 && (
+        <>
+          <h2 className="text-lg font-semibold mt-8 mb-2 flex items-center gap-2">
+            📦 Pedidos Five (cobrança pela plataforma) <Badge variant="outline" className="bg-blue-500/15 text-blue-700 border-blue-200">{fivePedidos.length}</Badge>
+          </h2>
+          <p className="text-muted-foreground mb-3 text-sm">Pedidos da Five — a cobrança é feita pela própria plataforma.</p>
+          {renderTable(fivePedidos, false)}
+        </>
+      )}
 
       {problematicos.length > 0 && (
         <>
