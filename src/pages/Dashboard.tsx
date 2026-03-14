@@ -284,6 +284,7 @@ export default function Dashboard() {
         <MetricCard title="Em Prioridade" icon={AlertTriangle} value={String(qtdPrioridade)} />
         <MetricCard title="CPA Médio" icon={Target} value={`R$ ${cpaMedio.toFixed(2)}`} />
         <MetricCard title="CPA 7 dias" icon={Target} value={`R$ ${cpa7d.toFixed(2)}`} subtitle={`${pedidos7d.length} pedidos · R$ ${investido7d.toFixed(2)} investido`} />
+        <MetricCard title="Valor Pago 7 dias" icon={DollarSign} value={`R$ ${valorPago7d.toFixed(2)}`} subtitle={`${pedidosPagos7d.length} pedidos pagos`} className="text-primary" />
       </div>
 
       {/* Valor Hoje + Ontem + Semana */}
