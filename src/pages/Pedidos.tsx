@@ -75,7 +75,10 @@ export default function Pedidos() {
   const estados = Array.from(new Set(pedidos.map((p) => p.estado).filter(Boolean))).sort() as string[];
 
   const filtered = pedidos.filter((p) => {
-    const matchSearch = !search || p.cliente.toLowerCase().includes(search.toLowerCase()) || p.produto.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !search || 
+      p.cliente.toLowerCase().includes(search.toLowerCase()) || 
+      p.produto.toLowerCase().includes(search.toLowerCase()) ||
+      (p.cpf && p.cpf.replace(/\D/g, "").includes(search.replace(/\D/g, "")));
     const matchStatus = statusFilter === "todos" || p.status === statusFilter;
     const matchEstado = estadoFilter === "todos" || p.estado === estadoFilter;
     return matchSearch && matchStatus && matchEstado;
