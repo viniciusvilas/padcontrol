@@ -288,6 +288,7 @@ export default function Dashboard() {
         <MetricCard title="CPA Médio" icon={Target} value={`R$ ${cpaMedio.toFixed(2)}`} />
         <MetricCard title="CPA 7 dias" icon={Target} value={`R$ ${cpa7d.toFixed(2)}`} subtitle={`${pedidos7d.length} pedidos · R$ ${investido7d.toFixed(2)} investido`} />
         <MetricCard title="Valor Pago 7 dias" icon={DollarSign} value={`R$ ${valorPago7d.toFixed(2)}`} subtitle={`${pedidosPagos7d.length} pedidos pagos`} className="text-primary" />
+        <MetricCard title="Anúncios 7 dias" icon={Megaphone} value={`R$ ${investidoAnuncios7d.toFixed(2)}`} subtitle={`${anuncios7d.length} dias com investimento`} className="text-destructive" />
       </div>
 
       {/* Valor Hoje + Ontem + Semana */}
