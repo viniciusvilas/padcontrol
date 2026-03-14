@@ -131,6 +131,18 @@ export default function Dashboard() {
   const budgetDia = Number(cpaDiaBudget) || 0;
   const cpaDia = pedidosHoje > 0 ? budgetDia / pedidosHoje : 0;
 
+  // Valor Ontem
+  const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
+  const pedidosOntemList = pedidos.filter((p) => p.data === yesterday);
+  const pedidosOntem = pedidosOntemList.length;
+  const valorOntem = pedidosOntemList.reduce((s, p) => s + Number(p.valor), 0);
+
+  // Valor da Semana (últimos 7 dias incluindo hoje)
+  const cutoffSemana = subDays(new Date(), 6);
+  const pedidosSemanaList = pedidos.filter((p) => isAfter(parseISO(p.data), cutoffSemana) || p.data === format(cutoffSemana, "yyyy-MM-dd"));
+  const pedidosSemana = pedidosSemanaList.length;
+  const valorSemana = pedidosSemanaList.reduce((s, p) => s + Number(p.valor), 0);
+
   // CPA últimos 7 dias
   const cutoff7d = subDays(new Date(), 7);
   const pedidos7d = pedidos.filter((p) => isAfter(parseISO(p.data), cutoff7d) || p.data === format(cutoff7d, "yyyy-MM-dd"));
