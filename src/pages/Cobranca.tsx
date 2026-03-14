@@ -117,11 +117,11 @@ export default function Cobranca() {
                     </div>
                   ) : (
                     <div
-                      className="max-w-[200px] rounded-md border border-amber-200 bg-amber-50/80 dark:border-amber-800 dark:bg-amber-950/40 px-2 py-1 text-xs text-amber-800 dark:text-amber-300 whitespace-pre-wrap break-words cursor-pointer hover:opacity-80 min-h-[24px]"
+                      className="max-w-[200px] px-2 py-1 text-xs font-bold whitespace-pre-wrap break-words cursor-pointer hover:opacity-70 min-h-[24px]"
                       title="Clique para editar"
                       onClick={() => { setEditingObs(p.id); setObsValue(p.observacoes || ""); }}
                     >
-                      {p.observacoes || <span className="text-muted-foreground italic">Adicionar obs...</span>}
+                      {p.observacoes || <span className="text-muted-foreground italic font-normal">Adicionar obs...</span>}
                     </div>
                   )}
                 </TableCell>
