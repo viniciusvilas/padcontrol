@@ -131,6 +131,18 @@ export default function Dashboard() {
   const budgetDia = Number(cpaDiaBudget) || 0;
   const cpaDia = pedidosHoje > 0 ? budgetDia / pedidosHoje : 0;
 
+  // Valor Ontem
+  const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
+  const pedidosOntemList = pedidos.filter((p) => p.data === yesterday);
+  const pedidosOntem = pedidosOntemList.length;
+  const valorOntem = pedidosOntemList.reduce((s, p) => s + Number(p.valor), 0);
+
+  // Valor da Semana (últimos 7 dias incluindo hoje)
+  const cutoffSemana = subDays(new Date(), 6);
+  const pedidosSemanaList = pedidos.filter((p) => isAfter(parseISO(p.data), cutoffSemana) || p.data === format(cutoffSemana, "yyyy-MM-dd"));
+  const pedidosSemana = pedidosSemanaList.length;
+  const valorSemana = pedidosSemanaList.reduce((s, p) => s + Number(p.valor), 0);
+
   // CPA últimos 7 dias
   const cutoff7d = subDays(new Date(), 7);
   const pedidos7d = pedidos.filter((p) => isAfter(parseISO(p.data), cutoff7d) || p.data === format(cutoff7d, "yyyy-MM-dd"));
@@ -270,9 +282,11 @@ export default function Dashboard() {
         <MetricCard title="CPA 7 dias" icon={Target} value={`R$ ${cpa7d.toFixed(2)}`} subtitle={`${pedidos7d.length} pedidos · R$ ${investido7d.toFixed(2)} investido`} />
       </div>
 
-      {/* CPA do Dia + Inadimplência + ROIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+      {/* CPA do Dia + Inadimplência + ROIs + Valor Ontem + Valor Semana */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
         <MetricCard title="Valor Hoje" icon={DollarSign} value={`R$ ${valorHoje.toFixed(2)}`} subtitle={`${pedidosHoje} pedidos`} className="text-primary" />
+        <MetricCard title="Valor Ontem" icon={DollarSign} value={`R$ ${valorOntem.toFixed(2)}`} subtitle={`${pedidosOntem} pedidos`} />
+        <MetricCard title="Valor da Semana" icon={DollarSign} value={`R$ ${valorSemana.toFixed(2)}`} subtitle={`${pedidosSemana} pedidos (7 dias)`} className="text-primary" />
         <Card>
           <CardHeader className="pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">CPA do Dia</CardTitle>
