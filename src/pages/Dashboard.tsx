@@ -154,6 +154,9 @@ export default function Dashboard() {
   const pedidosPagos7d = pedidos.filter((p) => p.pedido_pago && isAfter(parseISO(p.updated_at), cutoff7d));
   const valorPago7d = pedidosPagos7d.reduce((s, p) => s + (Number(p.valor_pago) || Number(p.valor)), 0);
 
+  // Investimento anúncios últimos 7 dias
+  const investidoAnuncios7d = anuncios7d.reduce((s, a) => s + Number(a.valor_investido), 0);
+
   // Inadimplência
   const now = new Date();
   const inadimplentes = filtered.filter((p) =>
