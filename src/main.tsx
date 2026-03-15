@@ -3,12 +3,10 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Force SW update on new deployments
+// Force SW update and reload on new deployments
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.ready.then((registration) => {
-    registration.addEventListener('controllerchange', () => {
-      window.location.reload();
-    });
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
   });
 }
 
