@@ -17,7 +17,7 @@ import Anuncios from "./pages/Anuncios";
 import Dashboard from "./pages/Dashboard";
 import Projecao from "./pages/Projecao";
 import Nivel from "./pages/Nivel";
-import Install from "./pages/Install";
+
 import FinancasDashboard from "./pages/FinancasDashboard";
 import FinancasTransacoes from "./pages/FinancasTransacoes";
 import FinancasContasPagar from "./pages/FinancasContasPagar";
