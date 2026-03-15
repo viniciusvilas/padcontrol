@@ -27,7 +27,10 @@ export default function Prioridade() {
         .eq("pedido_perdido", false)
         .order("data", { ascending: true });
       if (error) throw error;
-      return data as Pedido[];
+      return (data as Pedido[]).filter(p => {
+        if (!p.data_entrega) return false;
+        return differenceInCalendarDays(new Date(), parseISO(p.data_entrega)) > 7;
+      });
     },
     enabled: !!user,
   });
