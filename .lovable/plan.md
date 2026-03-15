@@ -1,23 +1,22 @@
 
 
-## Linhas alternadas com tons de roxo nas tabelas de pedidos
+## Plan: Remove PWA Configuration
 
-### O que será feito
-Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
+### Changes
 
-### Abordagem
-A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
+1. **`vite.config.ts`** — Remove `vite-plugin-pwa` import and the entire `VitePWA(...)` plugin call. Keep everything else intact.
 
-1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
-2. **Perdidos.tsx**
-3. **Pagos.tsx**
-4. **Prioridade.tsx**
-5. **FaltaChamar.tsx**
-6. **PrestesAChegar.tsx**
+2. **`src/main.tsx`** — Remove the `serviceWorker` listener block (lines 7-12). Keep the React render code.
 
-### Classes CSS
-- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
-- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
+3. **`index.html`** — Remove PWA-specific meta tags: `apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, `apple-mobile-web-app-title`, `apple-touch-icon` link, and `theme-color`.
 
-Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
+4. **`src/pages/Install.tsx`** — Delete this file (no longer needed).
+
+5. **`src/App.tsx`** — Remove the `/install` route and its import.
+
+6. **`src/components/AppSidebar.tsx`** — Remove any navigation link to the Install page if present.
+
+7. **`package.json`** — Remove `vite-plugin-pwa` from dependencies.
+
+8. **`public/`** — Delete `pwa-192x192.png` and `pwa-512x512.png` (PWA icons no longer needed).
 
