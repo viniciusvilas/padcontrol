@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import {
   Package, Clock, Phone, PhoneCall, AlertTriangle, CheckCircle, XCircle,
-  Megaphone, LayoutDashboard, TrendingUp, Trophy, LogOut, Download,
+  Megaphone, LayoutDashboard, TrendingUp, Trophy, LogOut,
   Wallet, ArrowLeftRight, Receipt, LineChart, PieChart, Tags, Building2, ClipboardList
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
