@@ -1,20 +1,23 @@
 
 
-## Plan: Filter Prioridade to 7+ Days Since Delivery
+## Linhas alternadas com tons de roxo nas tabelas de pedidos
 
-### Current Behavior
-The page shows **all** charged-but-unpaid orders, regardless of how long ago they were delivered.
+### O que será feito
+Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
 
-### Change
-In `src/pages/Prioridade.tsx`, add a client-side filter after fetching to only show orders where `data_entrega` is set and the delivery was **more than 7 days ago**.
+### Abordagem
+A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
 
-Specifically, after the query returns, filter the results:
-```typescript
-.filter(p => {
-  if (!p.data_entrega) return false;
-  return differenceInCalendarDays(new Date(), parseISO(p.data_entrega)) > 7;
-})
-```
+1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
+2. **Perdidos.tsx**
+3. **Pagos.tsx**
+4. **Prioridade.tsx**
+5. **FaltaChamar.tsx**
+6. **PrestesAChegar.tsx**
 
-This ensures only orders delivered 7+ days ago appear on this screen, matching the business rule for priority collection (inadimplência).
+### Classes CSS
+- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
+- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
+
+Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
 
