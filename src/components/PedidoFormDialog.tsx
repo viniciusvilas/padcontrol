@@ -239,7 +239,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
           {/* Plataforma - ANTES do produto para definir preços */}
           <div className="space-y-1.5">
             <Label>Plataforma</Label>
-            <Select value={form.plataforma} onValueChange={(v) => set("plataforma", v)}>
+            <Select value={form.plataforma} onValueChange={(v) => set("plataforma", v)} modal={false}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
