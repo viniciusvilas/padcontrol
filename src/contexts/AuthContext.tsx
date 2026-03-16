@@ -32,7 +32,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
           return;
         }
-        // For TOKEN_REFRESHED and other events, only update if we have a valid session
+
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          // Token refresh failed — clear state to force re-login
+          console.warn('Token refresh failed, clearing session');
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
         if (session) {
           setSession(session);
           setUser(session.user);
