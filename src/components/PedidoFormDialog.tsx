@@ -327,7 +327,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
           {/* Status */}
           <div className="space-y-1.5">
             <Label>Status</Label>
-            <Select value={form.status} onValueChange={(v) => set("status", v)}>
+            <Select value={form.status} onValueChange={(v) => set("status", v)} modal={false}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
