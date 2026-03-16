@@ -359,7 +359,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
           {/* Estado */}
           <div className="space-y-1.5">
             <Label>Estado (UF)</Label>
-            <Select value={form.estado || "none"} onValueChange={(v) => set("estado", v === "none" ? "" : v)}>
+            <Select value={form.estado || "none"} onValueChange={(v) => set("estado", v === "none" ? "" : v)} modal={false}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
