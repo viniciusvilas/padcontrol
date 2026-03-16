@@ -261,7 +261,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
                 produto: v,
                 valor: found ? String(found.preco) : prev.valor,
               }));
-            }}>
+            }} modal={false}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o produto" />
               </SelectTrigger>
