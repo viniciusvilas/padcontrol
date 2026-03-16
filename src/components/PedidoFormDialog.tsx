@@ -312,11 +312,11 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
           {/* Local de entrega */}
           <div className="space-y-1.5">
             <Label htmlFor="local_entrega">Local de Entrega</Label>
-            <Select value={form.local_entrega || "none"} onValueChange={(v) => set("local_entrega", v === "none" ? "" : v)} modal={false}>
+            <Select value={form.local_entrega || "none"} onValueChange={(v) => set("local_entrega", v === "none" ? "" : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <SelectItem value="none">Não informado</SelectItem>
                 <SelectItem value="CASA">Casa</SelectItem>
                 <SelectItem value="CORREIOS">Correios</SelectItem>
