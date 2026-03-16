@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppLayout } from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import Pedidos from "./pages/Pedidos";
@@ -66,39 +67,41 @@ function AuthRoute() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/auth" element={<AuthRoute />} />
-            <Route element={<ProtectedRoutes />}>
-              <Route path="/" element={<Pedidos />} />
-              <Route path="/prestes-a-chegar" element={<PrestesAChegar />} />
-              <Route path="/falta-chamar" element={<FaltaChamar />} />
-              <Route path="/cobranca" element={<Cobranca />} />
-              <Route path="/prioridade" element={<Prioridade />} />
-              <Route path="/pagos" element={<Pagos />} />
-              <Route path="/perdidos" element={<Perdidos />} />
-              <Route path="/anuncios" element={<Anuncios />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/projecao" element={<Projecao />} />
-              <Route path="/nivel" element={<Nivel />} />
-              
-              <Route path="/financas" element={<FinancasDashboard />} />
-              <Route path="/financas/transacoes" element={<FinancasTransacoes />} />
-              <Route path="/financas/contas-a-pagar" element={<FinancasContasPagar />} />
-              <Route path="/financas/orcamento" element={<FinancasOrcamento />} />
-              <Route path="/financas/investimentos" element={<FinancasInvestimentos />} />
-              <Route path="/financas/projecoes" element={<FinancasProjecoes />} />
-              <Route path="/financas/categorias" element={<FinancasCategorias />} />
-              <Route path="/financas/contas" element={<FinancasContas />} />
-              <Route path="/financas/a-receber" element={<FinancasAReceber />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
+      <ErrorBoundary>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/auth" element={<AuthRoute />} />
+              <Route element={<ProtectedRoutes />}>
+                <Route path="/" element={<Pedidos />} />
+                <Route path="/prestes-a-chegar" element={<PrestesAChegar />} />
+                <Route path="/falta-chamar" element={<FaltaChamar />} />
+                <Route path="/cobranca" element={<Cobranca />} />
+                <Route path="/prioridade" element={<Prioridade />} />
+                <Route path="/pagos" element={<Pagos />} />
+                <Route path="/perdidos" element={<Perdidos />} />
+                <Route path="/anuncios" element={<Anuncios />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/projecao" element={<Projecao />} />
+                <Route path="/nivel" element={<Nivel />} />
+                
+                <Route path="/financas" element={<FinancasDashboard />} />
+                <Route path="/financas/transacoes" element={<FinancasTransacoes />} />
+                <Route path="/financas/contas-a-pagar" element={<FinancasContasPagar />} />
+                <Route path="/financas/orcamento" element={<FinancasOrcamento />} />
+                <Route path="/financas/investimentos" element={<FinancasInvestimentos />} />
+                <Route path="/financas/projecoes" element={<FinancasProjecoes />} />
+                <Route path="/financas/categorias" element={<FinancasCategorias />} />
+                <Route path="/financas/contas" element={<FinancasContas />} />
+                <Route path="/financas/a-receber" element={<FinancasAReceber />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </ErrorBoundary>
     </TooltipProvider>
   </QueryClientProvider>
 );
