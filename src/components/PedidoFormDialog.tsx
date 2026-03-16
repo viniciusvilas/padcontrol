@@ -224,7 +224,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent key={open ? 'open' : 'closed'} className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Editar Pedido" : "Novo Pedido"}</DialogTitle>
         </DialogHeader>
