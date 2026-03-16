@@ -359,11 +359,11 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
           {/* Estado */}
           <div className="space-y-1.5">
             <Label>Estado (UF)</Label>
-            <Select value={form.estado || "none"} onValueChange={(v) => set("estado", v === "none" ? "" : v)} modal={false}>
+            <Select value={form.estado || "none"} onValueChange={(v) => set("estado", v === "none" ? "" : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <SelectItem value="none">Não informado</SelectItem>
                 {ESTADOS_BR.map((uf) => (
                   <SelectItem key={uf} value={uf}>{uf}</SelectItem>
