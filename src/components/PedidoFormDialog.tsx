@@ -239,11 +239,11 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
           {/* Plataforma - ANTES do produto para definir preços */}
           <div className="space-y-1.5">
             <Label>Plataforma</Label>
-            <Select value={form.plataforma} onValueChange={(v) => set("plataforma", v)} modal={false}>
+            <Select value={form.plataforma} onValueChange={(v) => set("plataforma", v)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <SelectItem value="Five">Five (frete R$35,50)</SelectItem>
                 <SelectItem value="Keed">Keed (frete grátis)</SelectItem>
               </SelectContent>
