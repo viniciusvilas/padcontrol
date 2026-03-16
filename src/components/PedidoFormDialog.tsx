@@ -327,11 +327,11 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
           {/* Status */}
           <div className="space-y-1.5">
             <Label>Status</Label>
-            <Select value={form.status} onValueChange={(v) => set("status", v)} modal={false}>
+            <Select value={form.status} onValueChange={(v) => set("status", v)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 {STATUS_OPTIONS.map((o) => (
                   <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                 ))}
