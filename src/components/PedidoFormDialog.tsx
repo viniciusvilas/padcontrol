@@ -261,11 +261,11 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
                 produto: v,
                 valor: found ? String(found.preco) : prev.valor,
               }));
-            }} modal={false}>
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o produto" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 {(PRODUTO_OPTIONS[form.plataforma] || PRODUTO_OPTIONS["Five"]).map((p) => (
                   <SelectItem key={p.value} value={p.value}>{p.label} — R$ {p.preco.toFixed(2)}</SelectItem>
                 ))}
