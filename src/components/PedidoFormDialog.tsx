@@ -224,7 +224,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent key={open ? 'open' : 'closed'} className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Editar Pedido" : "Novo Pedido"}</DialogTitle>
         </DialogHeader>
@@ -243,7 +243,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <SelectItem value="Five">Five (frete R$35,50)</SelectItem>
                 <SelectItem value="Keed">Keed (frete grátis)</SelectItem>
               </SelectContent>
@@ -265,7 +265,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o produto" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 {(PRODUTO_OPTIONS[form.plataforma] || PRODUTO_OPTIONS["Five"]).map((p) => (
                   <SelectItem key={p.value} value={p.value}>{p.label} — R$ {p.preco.toFixed(2)}</SelectItem>
                 ))}
@@ -316,7 +316,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
               <SelectTrigger>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <SelectItem value="none">Não informado</SelectItem>
                 <SelectItem value="CASA">Casa</SelectItem>
                 <SelectItem value="CORREIOS">Correios</SelectItem>
@@ -331,7 +331,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 {STATUS_OPTIONS.map((o) => (
                   <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                 ))}
@@ -363,7 +363,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
               <SelectTrigger>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                 <SelectItem value="none">Não informado</SelectItem>
                 {ESTADOS_BR.map((uf) => (
                   <SelectItem key={uf} value={uf}>{uf}</SelectItem>
