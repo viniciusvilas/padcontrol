@@ -259,6 +259,27 @@ export default function Pedidos() {
       <ImportPedidosDialog open={importOpen} onOpenChange={setImportOpen} onSuccess={refetch} />
       <PedidoFormDialog open={formOpen} onOpenChange={setFormOpen} onSuccess={refetch} pedido={editPedido} />
       <ListaTelefonicaDialog open={listaOpen} onOpenChange={setListaOpen} />
+
+      <AlertDialog open={!!deletePedido} onOpenChange={(open) => { if (!open) setDeletePedido(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir pedido?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o pedido de <strong>{deletePedido?.cliente}</strong> — {deletePedido?.produto}? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
+              if (!deletePedido) return;
+              const { error } = await supabase.from("pedidos").delete().eq("id", deletePedido.id);
+              if (error) toast.error("Erro ao excluir");
+              else { toast.success("Pedido excluído"); refetch(); }
+              setDeletePedido(null);
+            }}>Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
