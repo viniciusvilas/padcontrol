@@ -51,6 +51,7 @@ export default function Pedidos() {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [estadoFilter, setEstadoFilter] = useState("todos");
   const [pagamentoPedido, setPagamentoPedido] = useState<Pedido | null>(null);
+  const [deletePedido, setDeletePedido] = useState<Pedido | null>(null);
 
   const { data: pedidos = [], isLoading, refetch } = useQuery({
     queryKey: ["pedidos", user?.id],
