@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Upload, Plus, Search, Filter, Pencil, Trash2, Megaphone, Copy, Phone } from "lucide-react";
+import { Package, Upload, Plus, Search, Filter, Pencil, Trash2, Megaphone, Copy, Phone, AlertTriangle } from "lucide-react";
 import PagamentoDialog from "@/components/PagamentoDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
