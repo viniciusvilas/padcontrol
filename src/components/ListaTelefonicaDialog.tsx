@@ -66,7 +66,7 @@ export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent key={open ? 'open' : 'closed'} className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Phone className="h-5 w-5" /> Lista Telefônica
@@ -107,7 +107,7 @@ export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
             <label className="text-sm font-medium mb-1 block">Plataforma</label>
             <Select value={plataforma} onValueChange={setPlataforma}>
               <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
+              <SelectContent>
                 <SelectItem value="todas">Todas</SelectItem>
                 <SelectItem value="Five">Five</SelectItem>
                 <SelectItem value="Keed">Keed</SelectItem>

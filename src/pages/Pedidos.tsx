@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Upload, Plus, Search, Filter, Pencil, Trash2, Megaphone, Copy, Phone, AlertTriangle } from "lucide-react";
+import { Package, Upload, Plus, Search, Filter, Pencil, Trash2, Megaphone, Copy, Phone } from "lucide-react";
 import PagamentoDialog from "@/components/PagamentoDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,7 +14,6 @@ import ImportPedidosDialog from "@/components/ImportPedidosDialog";
 import PedidoFormDialog from "@/components/PedidoFormDialog";
 import ListaTelefonicaDialog from "@/components/ListaTelefonicaDialog";
 import { toast } from "sonner";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Pedido = Tables<"pedidos">;
@@ -51,7 +50,6 @@ export default function Pedidos() {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [estadoFilter, setEstadoFilter] = useState("todos");
   const [pagamentoPedido, setPagamentoPedido] = useState<Pedido | null>(null);
-  const [deletePedido, setDeletePedido] = useState<Pedido | null>(null);
 
   const { data: pedidos = [], isLoading, refetch } = useQuery({
     queryKey: ["pedidos", user?.id],
@@ -240,7 +238,11 @@ export default function Pedidos() {
                   <TableCell>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditPedido(p); setFormOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletePedido(p)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={async () => {
+                        const { error } = await supabase.from("pedidos").delete().eq("id", p.id);
+                        if (error) toast.error("Erro ao excluir");
+                        else { toast.success("Pedido excluído"); refetch(); }
+                      }}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -259,27 +261,6 @@ export default function Pedidos() {
       <ImportPedidosDialog open={importOpen} onOpenChange={setImportOpen} onSuccess={refetch} />
       <PedidoFormDialog open={formOpen} onOpenChange={setFormOpen} onSuccess={refetch} pedido={editPedido} />
       <ListaTelefonicaDialog open={listaOpen} onOpenChange={setListaOpen} />
-
-      <AlertDialog open={!!deletePedido} onOpenChange={(open) => { if (!open) setDeletePedido(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir pedido?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir o pedido de <strong>{deletePedido?.cliente}</strong> — {deletePedido?.produto}? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={async () => {
-              if (!deletePedido) return;
-              const { error } = await supabase.from("pedidos").delete().eq("id", deletePedido.id);
-              if (error) toast.error("Erro ao excluir");
-              else { toast.success("Pedido excluído"); refetch(); }
-              setDeletePedido(null);
-            }}>Excluir</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

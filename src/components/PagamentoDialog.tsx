@@ -83,7 +83,7 @@ export default function PagamentoDialog({ pedido, open, onOpenChange, onSuccess 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent key={open ? 'open' : 'closed'} className="sm:max-w-[400px]">
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Registrar Pagamento</DialogTitle>
         </DialogHeader>
@@ -113,7 +113,7 @@ export default function PagamentoDialog({ pedido, open, onOpenChange, onSuccess 
                 <SelectTrigger id="conta-destino">
                   <SelectValue placeholder="Selecione a conta..." />
                 </SelectTrigger>
-                <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
+                <SelectContent>
                   {activeAccounts.map((acc) => (
                     <SelectItem key={acc.id} value={acc.id}>
                       {acc.name}
