@@ -14,6 +14,7 @@ import ImportPedidosDialog from "@/components/ImportPedidosDialog";
 import PedidoFormDialog from "@/components/PedidoFormDialog";
 import ListaTelefonicaDialog from "@/components/ListaTelefonicaDialog";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Pedido = Tables<"pedidos">;

@@ -113,7 +113,7 @@ export default function PagamentoDialog({ pedido, open, onOpenChange, onSuccess 
                 <SelectTrigger id="conta-destino">
                   <SelectValue placeholder="Selecione a conta..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                   {activeAccounts.map((acc) => (
                     <SelectItem key={acc.id} value={acc.id}>
                       {acc.name}
