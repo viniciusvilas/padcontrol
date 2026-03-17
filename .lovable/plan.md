@@ -1,23 +1,21 @@
 
 
-## Linhas alternadas com tons de roxo nas tabelas de pedidos
+## Correção de Bugs de Alta Severidade
 
-### O que será feito
-Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
+### 1. Select no PagamentoDialog sem proteção de foco
+**Arquivo:** `src/components/PagamentoDialog.tsx`
+- Adicionar `onCloseAutoFocus={(e) => e.preventDefault()}` no `<SelectContent>` (conta destino)
+- Adicionar `key={open ? 'open' : 'closed'}` no `<DialogContent>`
 
-### Abordagem
-A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
+### 2. Select na ListaTelefonicaDialog sem proteção de foco
+**Arquivo:** `src/components/ListaTelefonicaDialog.tsx`
+- Adicionar `onCloseAutoFocus={(e) => e.preventDefault()}` no `<SelectContent>` (plataforma)
+- Adicionar `key={open ? 'open' : 'closed'}` no `<DialogContent>`
 
-1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
-2. **Perdidos.tsx**
-3. **Pagos.tsx**
-4. **Prioridade.tsx**
-5. **FaltaChamar.tsx**
-6. **PrestesAChegar.tsx**
-
-### Classes CSS
-- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
-- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
-
-Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
+### 3. Exclusão de pedido sem confirmação
+**Arquivo:** `src/pages/Pedidos.tsx`
+- Importar `AlertDialog` e componentes relacionados
+- Adicionar estado para armazenar o pedido a ser excluído
+- Substituir a exclusão direta no botão Trash2 por abertura do AlertDialog
+- Renderizar o AlertDialog com mensagem "Tem certeza que deseja excluir este pedido?" e botões Cancelar/Excluir
 
