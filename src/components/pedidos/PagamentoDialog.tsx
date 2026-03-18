@@ -78,7 +78,7 @@ export default function PagamentoDialog({ pedido, open, onOpenChange, onSuccess 
                 <Label>Conta Destino</Label>
                 <Select value={contaDestinoId} onValueChange={setContaDestinoId}>
                   <SelectTrigger><SelectValue placeholder="Selecione a conta..." /></SelectTrigger>
-                  <SelectContent modal={false} position="popper">
+                  <SelectContent position="popper">
                     {activeAccounts.map((acc) => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
                   </SelectContent>
                 </Select>

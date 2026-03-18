@@ -89,7 +89,7 @@ export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
             <label className="text-sm font-medium mb-1 block">Plataforma</label>
             <Select value={plataforma} onValueChange={setPlataforma}>
               <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent modal={false} position="popper">
+              <SelectContent position="popper">
                 <SelectItem value="todas">Todas</SelectItem>
                 <SelectItem value="Five">Five</SelectItem>
                 <SelectItem value="Keed">Keed</SelectItem>

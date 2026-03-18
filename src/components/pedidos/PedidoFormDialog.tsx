@@ -142,7 +142,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
               <Label>Plataforma</Label>
               <Select value={form.plataforma} onValueChange={(v) => set("plataforma", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent modal={false} position="popper" onCloseAutoFocus={(e) => e.preventDefault()}>
+                <SelectContent position="popper" onCloseAutoFocus={(e) => e.preventDefault()}>
                   <SelectItem value="Five">Five (frete R$35,50)</SelectItem>
                   <SelectItem value="Keed">Keed (frete grátis)</SelectItem>
                 </SelectContent>
@@ -160,7 +160,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
                 }}
               >
                 <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
-                <SelectContent modal={false} position="popper" onCloseAutoFocus={(e) => e.preventDefault()}>
+                <SelectContent position="popper" onCloseAutoFocus={(e) => e.preventDefault()}>
                   {(PRODUTO_OPTIONS[form.plataforma] || PRODUTO_OPTIONS["Five"]).map((p) => (
                     <SelectItem key={p.value} value={p.value}>{p.label} — R$ {p.preco.toFixed(2)}</SelectItem>
                   ))}
@@ -202,7 +202,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
               <Label>Local de Entrega</Label>
               <Select value={form.local_entrega || "none"} onValueChange={(v) => set("local_entrega", v === "none" ? "" : v)}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent modal={false} position="popper" onCloseAutoFocus={(e) => e.preventDefault()}>
+                <SelectContent position="popper" onCloseAutoFocus={(e) => e.preventDefault()}>
                   <SelectItem value="none">Não informado</SelectItem>
                   <SelectItem value="CASA">Casa</SelectItem>
                   <SelectItem value="CORREIOS">Correios</SelectItem>
@@ -214,7 +214,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
               <Label>Status</Label>
               <Select value={form.status} onValueChange={(v) => set("status", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent modal={false} position="popper" onCloseAutoFocus={(e) => e.preventDefault()}>
+                <SelectContent position="popper" onCloseAutoFocus={(e) => e.preventDefault()}>
                   {STATUS_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -224,7 +224,7 @@ export default function PedidoFormDialog({ open, onOpenChange, onSuccess, pedido
               <Label>Estado (UF)</Label>
               <Select value={form.estado || "none"} onValueChange={(v) => set("estado", v === "none" ? "" : v)}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent modal={false} position="popper" onCloseAutoFocus={(e) => e.preventDefault()}>
+                <SelectContent position="popper" onCloseAutoFocus={(e) => e.preventDefault()}>
                   <SelectItem value="none">Não informado</SelectItem>
                   {ESTADOS_BR.map((uf) => <SelectItem key={uf} value={uf}>{uf}</SelectItem>)}
                 </SelectContent>
