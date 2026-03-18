@@ -8,6 +8,7 @@ import { parseSpreadsheet, PedidoImportRow } from "@/lib/importPedidos";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { statusStyle } from "@/lib/constants";
 
 interface Props {
   open: boolean;
@@ -32,7 +33,7 @@ export default function ImportPedidosDialog({ open, onOpenChange, onSuccess }: P
       setRows(parsed);
       setStep("preview");
     } catch {
-      toast.error("Erro ao ler a planilha. Verifique o formato.");
+      toast.error("Erro ao ler a planilha.");
     }
   };
 
@@ -43,41 +44,27 @@ export default function ImportPedidosDialog({ open, onOpenChange, onSuccess }: P
       const batch = rows.map((r) => ({ ...r, user_id: user.id, plataforma: "Five" }));
       const CHUNK = 50;
       for (let i = 0; i < batch.length; i += CHUNK) {
-        const chunk = batch.slice(i, i + CHUNK);
-        const { error } = await supabase.from("pedidos").insert(chunk);
+        const { error } = await supabase.from("pedidos").insert(batch.slice(i, i + CHUNK));
         if (error) throw error;
       }
-      toast.success(`${rows.length} pedidos importados com sucesso!`);
+      toast.success(`${rows.length} pedidos importados!`);
       onSuccess();
       handleClose();
     } catch (err: any) {
-      toast.error("Erro ao importar: " + (err.message || "erro desconhecido"));
+      toast.error("Erro: " + (err.message || "erro desconhecido"));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClose = () => {
-    setRows([]);
-    setStep("upload");
-    setFileName("");
-    onOpenChange(false);
-  };
-
-  const statusColor = (s: string) => {
-    if (s === "pago") return "bg-emerald-500/15 text-emerald-700 border-emerald-200";
-    if (s === "perdido") return "bg-red-500/15 text-red-700 border-red-200";
-    if (s === "em_cobranca") return "bg-amber-500/15 text-amber-700 border-amber-200";
-    return "bg-muted text-muted-foreground";
-  };
+  const handleClose = () => { setRows([]); setStep("upload"); setFileName(""); onOpenChange(false); };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5 text-primary" />
-            Importar Planilha
+            <FileSpreadsheet className="h-5 w-5 text-primary" /> Importar Planilha
           </DialogTitle>
         </DialogHeader>
 
@@ -85,7 +72,7 @@ export default function ImportPedidosDialog({ open, onOpenChange, onSuccess }: P
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <div className="border-2 border-dashed border-border rounded-xl p-10 text-center cursor-pointer hover:border-primary/50 transition-colors" onClick={() => fileRef.current?.click()}>
               <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-              <p className="text-sm font-medium">Clique para selecionar um arquivo</p>
+              <p className="text-sm font-medium">Clique para selecionar</p>
               <p className="text-xs text-muted-foreground mt-1">.xlsx ou .csv</p>
             </div>
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
@@ -102,12 +89,8 @@ export default function ImportPedidosDialog({ open, onOpenChange, onSuccess }: P
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Produto</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Entrega</TableHead>
+                    <TableHead>Cliente</TableHead><TableHead>Valor</TableHead><TableHead>Produto</TableHead>
+                    <TableHead>Data</TableHead><TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -117,12 +100,7 @@ export default function ImportPedidosDialog({ open, onOpenChange, onSuccess }: P
                       <TableCell>R$ {r.valor.toFixed(2)}</TableCell>
                       <TableCell>{r.produto}</TableCell>
                       <TableCell>{r.data}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={statusColor(r.status)}>
-                          {r.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{r.local_entrega || "—"}</TableCell>
+                      <TableCell><Badge variant="outline" className={statusStyle(r.status)}>{r.status}</Badge></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -130,7 +108,7 @@ export default function ImportPedidosDialog({ open, onOpenChange, onSuccess }: P
             </div>
             {rows.length > 100 && (
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" /> Mostrando 100 de {rows.length} linhas
+                <AlertCircle className="h-3 w-3" /> Mostrando 100 de {rows.length}
               </p>
             )}
           </>

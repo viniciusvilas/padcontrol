@@ -1,61 +1,31 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Megaphone, Plus, Pencil, Trash2, DollarSign, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAnuncios, type Anuncio } from "@/hooks/useAnuncios";
+import { usePedidos } from "@/hooks/usePedidos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import type { Tables } from "@/integrations/supabase/types";
-
-type Anuncio = Tables<"anuncios">;
+import MetricCard from "@/components/shared/MetricCard";
 
 export default function Anuncios() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { anuncios, isLoading, totalInvestido } = useAnuncios();
+  const { pedidos } = usePedidos();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Anuncio | null>(null);
   const [formData, setFormData] = useState({ data: format(new Date(), "yyyy-MM-dd"), valor_investido: "" });
 
-  const { data: anuncios = [], isLoading } = useQuery({
-    queryKey: ["anuncios", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("anuncios")
-        .select("*")
-        .eq("user_id", user!.id)
-        .order("data", { ascending: false });
-      if (error) throw error;
-      return data as Anuncio[];
-    },
-    enabled: !!user,
-  });
-
-  const { data: pedidosCount = 0 } = useQuery({
-    queryKey: ["pedidos-total-count", user?.id],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("pedidos")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user!.id);
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: !!user,
-  });
-
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = {
-        user_id: user!.id,
-        data: formData.data,
-        valor_investido: Number(formData.valor_investido) || 0,
-      };
+      const payload = { user_id: user!.id, data: formData.data, valor_investido: Number(formData.valor_investido) || 0 };
       if (editing) {
         const { error } = await supabase.from("anuncios").update(payload).eq("id", editing.id);
         if (error) throw error;
@@ -64,11 +34,7 @@ export default function Anuncios() {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
-      toast.success(editing ? "Atualizado!" : "Registrado!");
-      qc.invalidateQueries({ queryKey: ["anuncios"] });
-      closeForm();
-    },
+    onSuccess: () => { toast.success(editing ? "Atualizado!" : "Registrado!"); qc.invalidateQueries({ queryKey: ["anuncios"] }); closeForm(); },
     onError: () => toast.error("Erro ao salvar"),
   });
 
@@ -77,29 +43,15 @@ export default function Anuncios() {
       const { error } = await supabase.from("anuncios").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      toast.success("Excluído!");
-      qc.invalidateQueries({ queryKey: ["anuncios"] });
-    },
+    onSuccess: () => { toast.success("Excluído!"); qc.invalidateQueries({ queryKey: ["anuncios"] }); },
     onError: () => toast.error("Erro ao excluir"),
   });
 
-  const openNew = () => {
-    setEditing(null);
-    setFormData({ data: format(new Date(), "yyyy-MM-dd"), valor_investido: "" });
-    setFormOpen(true);
-  };
-
-  const openEdit = (a: Anuncio) => {
-    setEditing(a);
-    setFormData({ data: a.data, valor_investido: String(a.valor_investido) });
-    setFormOpen(true);
-  };
-
+  const openNew = () => { setEditing(null); setFormData({ data: format(new Date(), "yyyy-MM-dd"), valor_investido: "" }); setFormOpen(true); };
+  const openEdit = (a: Anuncio) => { setEditing(a); setFormData({ data: a.data, valor_investido: String(a.valor_investido) }); setFormOpen(true); };
   const closeForm = () => { setFormOpen(false); setEditing(null); };
 
-  const totalInvestido = anuncios.reduce((s, a) => s + Number(a.valor_investido), 0);
-  const cpaMedio = pedidosCount > 0 ? totalInvestido / pedidosCount : 0;
+  const cpaMedio = pedidos.length > 0 ? totalInvestido / pedidos.length : 0;
 
   return (
     <div className="space-y-6">
@@ -111,32 +63,12 @@ export default function Anuncios() {
         <Button onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Novo Registro</Button>
       </div>
 
-      {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Total Investido</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">R$ {totalInvestido.toFixed(2)}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">CPA Médio</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">R$ {cpaMedio.toFixed(2)}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Pedidos Feitos</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">{pedidosCount}</div></CardContent>
-        </Card>
+        <MetricCard icon={DollarSign} title="Total Investido" value={`R$ ${totalInvestido.toFixed(2)}`} subtitle={`c/ imposto: R$ ${(totalInvestido * 1.125).toFixed(2)}`} />
+        <MetricCard icon={Target} title="CPA Médio" value={`R$ ${cpaMedio.toFixed(2)}`} subtitle={`c/ imposto: R$ ${(cpaMedio * 1.125).toFixed(2)}`} />
+        <MetricCard icon={Target} title="Pedidos Feitos" value={String(pedidos.length)} />
       </div>
 
-      {/* Table */}
       <div className="border rounded-lg overflow-auto">
         <Table>
           <TableHeader>
@@ -169,18 +101,19 @@ export default function Anuncios() {
         </Table>
       </div>
 
-      {/* Form Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>{editing ? "Editar Registro" : "Novo Registro de Anúncio"}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div><Label>Data</Label><Input type="date" value={formData.data} onChange={(e) => setFormData({ ...formData, data: e.target.value })} /></div>
-            <div><Label>Valor Investido (R$)</Label><Input type="number" step="0.01" value={formData.valor_investido} onChange={(e) => setFormData({ ...formData, valor_investido: e.target.value })} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={closeForm}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>{editing ? "Salvar" : "Registrar"}</Button>
-          </DialogFooter>
+          <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(); }}>
+            <div className="space-y-4">
+              <div><Label>Data</Label><Input type="date" value={formData.data} onChange={(e) => setFormData({ ...formData, data: e.target.value })} /></div>
+              <div><Label>Valor Investido (R$)</Label><Input type="number" step="0.01" value={formData.valor_investido} onChange={(e) => setFormData({ ...formData, valor_investido: e.target.value })} /></div>
+            </div>
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="outline" onClick={closeForm}>Cancelar</Button>
+              <Button type="submit" disabled={saveMutation.isPending}>{editing ? "Salvar" : "Registrar"}</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

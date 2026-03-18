@@ -15,9 +15,7 @@ import { toast } from "sonner";
 function fixPhone(raw: string | null): string {
   if (!raw) return "";
   const digits = raw.replace(/\D/g, "");
-  if (digits.length === 10) {
-    return digits.slice(0, 2) + "9" + digits.slice(2);
-  }
+  if (digits.length === 10) return digits.slice(0, 2) + "9" + digits.slice(2);
   return digits;
 }
 
@@ -39,44 +37,28 @@ export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
     setLoading(true);
     const from = format(dateFrom, "yyyy-MM-dd");
     const to = format(dateTo, "yyyy-MM-dd");
-    let query = supabase
-      .from("pedidos")
-      .select("cliente, telefone, plataforma")
-      .eq("user_id", user.id)
-      .gte("data", from)
-      .lte("data", to);
-    if (plataforma !== "todas") {
-      query = query.eq("plataforma", plataforma);
-    }
+    let query = supabase.from("pedidos").select("cliente, telefone, plataforma")
+      .eq("user_id", user.id).gte("data", from).lte("data", to);
+    if (plataforma !== "todas") query = query.eq("plataforma", plataforma);
     const { data, error } = await query;
     setLoading(false);
-    if (error) { toast.error("Erro ao buscar pedidos"); return; }
-    if (!data?.length) { setLista(""); toast.info("Nenhum pedido encontrado nesse período"); return; }
-    const text = data
-      .filter((p) => p.telefone)
-      .map((p) => `${p.cliente} / ${fixPhone(p.telefone)}`)
-      .join("\n");
-    setLista(text || "Nenhum pedido com telefone nesse período");
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(lista);
-    toast.success("Lista copiada!");
+    if (error) { toast.error("Erro ao buscar"); return; }
+    if (!data?.length) { setLista(""); toast.info("Nenhum pedido encontrado"); return; }
+    const text = data.filter((p) => p.telefone).map((p) => `${p.cliente} / ${fixPhone(p.telefone)}`).join("\n");
+    setLista(text || "Nenhum pedido com telefone");
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Phone className="h-5 w-5" /> Lista Telefônica
-          </DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><Phone className="h-5 w-5" /> Lista Telefônica</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium mb-1 block">De</label>
-              <Popover>
+              <Popover modal={false}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -90,7 +72,7 @@ export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Até</label>
-              <Popover>
+              <Popover modal={false}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -107,7 +89,7 @@ export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
             <label className="text-sm font-medium mb-1 block">Plataforma</label>
             <Select value={plataforma} onValueChange={setPlataforma}>
               <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper">
                 <SelectItem value="todas">Todas</SelectItem>
                 <SelectItem value="Five">Five</SelectItem>
                 <SelectItem value="Keed">Keed</SelectItem>
@@ -120,7 +102,7 @@ export default function ListaTelefonicaDialog({ open, onOpenChange }: Props) {
           {lista && (
             <>
               <Textarea readOnly value={lista} rows={10} className="font-mono text-sm" />
-              <Button variant="outline" className="w-full" onClick={handleCopy}>
+              <Button variant="outline" className="w-full" onClick={() => { navigator.clipboard.writeText(lista); toast.success("Copiada!"); }}>
                 <Copy className="h-4 w-4 mr-2" /> Copiar Lista
               </Button>
             </>
