@@ -45,6 +45,7 @@ export default function PagamentoDialog({ pedido, open, onOpenChange, onSuccess 
       pedido_pago: true,
       status: "pago",
       valor_pago: valor,
+      data_pagamento: new Date().toISOString().split("T")[0],
     };
     if (contaDestinoId) {
       updateData.conta_destino_id = contaDestinoId;
