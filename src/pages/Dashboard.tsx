@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
 import { LayoutDashboard, DollarSign, Truck, TrendingUp, Package, Percent, Target, AlertTriangle, Megaphone, MapPin } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePedidos } from "@/hooks/usePedidos";
-import { useAnuncios } from "@/hooks/useAnuncios";
 import { format, subDays, startOfMonth, parseISO, isAfter, differenceInCalendarDays, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from "recharts";
-import MetricCard from "@/components/shared/MetricCard";
-import { FRETE_FIVE } from "@/lib/constants";
+import {
+  ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig,
+} from "@/components/ui/chart";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell,
+} from "recharts";
+
+const FRETE_FIVE = 35.5;
 
 const periodOptions = [
   { value: "7", label: "Últimos 7 dias" },
@@ -38,14 +42,34 @@ const statePieConfig: ChartConfig = { value: { label: "Pedidos" } };
 const stateBarConfig: ChartConfig = { count: { label: "Pedidos", color: "hsl(var(--primary))" } };
 
 export default function Dashboard() {
-  const { pedidos, isLoading } = usePedidos();
-  const { anuncios, totalInvestido: totalInvestidoAll } = useAnuncios();
+  const { user } = useAuth();
   const [period, setPeriod] = useState("30");
   const [estadoFilter, setEstadoFilter] = useState("all");
   const [ordersGroupBy, setOrdersGroupBy] = useState("day");
   const [paymentsGroupBy, setPaymentsGroupBy] = useState("day");
   const [cpaDiaBudget, setCpaDiaBudget] = useState("");
 
+  const { data: pedidos = [], isLoading: loadingPedidos } = useQuery({
+    queryKey: ["pedidos-dashboard", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("pedidos").select("*").eq("user_id", user!.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: anuncios = [] } = useQuery({
+    queryKey: ["anuncios-dashboard", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("anuncios").select("*").eq("user_id", user!.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // All unique states for the filter
   const allEstados = useMemo(() => {
     const set = new Set<string>();
     pedidos.forEach((p) => { if (p.estado) set.add(p.estado); });
@@ -54,12 +78,16 @@ export default function Dashboard() {
 
   const filtered = useMemo(() => {
     let result = pedidos;
+    // Period filter
     if (period !== "all") {
       const now = new Date();
       const cutoff = period === "month" ? startOfMonth(now) : subDays(now, Number(period));
       result = result.filter((p) => isAfter(parseISO(p.data), cutoff) || p.data === format(cutoff, "yyyy-MM-dd"));
     }
-    if (estadoFilter !== "all") result = result.filter((p) => p.estado === estadoFilter);
+    // State filter
+    if (estadoFilter !== "all") {
+      result = result.filter((p) => p.estado === estadoFilter);
+    }
     return result;
   }, [pedidos, period, estadoFilter]);
 
@@ -73,56 +101,81 @@ export default function Dashboard() {
   // Metrics
   const pagos = filtered.filter((p) => p.pedido_pago);
   const valorAgendadoTotal = filtered.reduce((s, p) => s + Number(p.valor), 0);
+  const valorAgendadoSemPagos = filtered.filter((p) => !p.pedido_pago).reduce((s, p) => s + Number(p.valor), 0);
   const qtdPedidos = filtered.length;
   const qtdPagos = pagos.length;
   const qtdEntregues = filtered.filter((p) => p.pedido_chegou).length;
   const aguardandoPgtoList = filtered.filter((p) => p.pedido_chegou && !p.pedido_pago && !p.pedido_perdido);
+  const qtdAguardandoPgto = aguardandoPgtoList.length;
   const valorPendente = aguardandoPgtoList.reduce((s, p) => s + Number(p.valor), 0);
+  const qtdPrioridade = filtered.filter((p) => p.cliente_cobrado && !p.pedido_pago && !p.pedido_perdido).length;
   const totalInvestido = filteredAnuncios.reduce((s, a) => s + Number(a.valor_investido), 0);
   const faturamentoPagos = pagos.reduce((s, p) => s + (Number(p.valor_pago) > 0 ? Number(p.valor_pago) : Number(p.valor)), 0);
+
+  // Platform counts
+  const qtdFive = filtered.filter((p) => p.plataforma === "Five").length;
+  const qtdKeed = filtered.filter((p) => p.plataforma === "Keed").length;
 
   const fiveNaoPagos = filtered.filter((p) => p.plataforma === "Five" && !p.pedido_pago).length;
   const fivePagos = filtered.filter((p) => p.plataforma === "Five" && p.pedido_pago).length;
   const gastoFreteReal = fiveNaoPagos * FRETE_FIVE;
+  const freteDevolvido = fivePagos * FRETE_FIVE;
   const lucroPagos = faturamentoPagos - totalInvestido - gastoFreteReal;
   const cpaMedio = qtdPedidos > 0 ? totalInvestido / qtdPedidos : 0;
 
+  // CPA do dia
   const today = format(new Date(), "yyyy-MM-dd");
   const pedidosHojeList = pedidos.filter((p) => p.data === today);
+  const pedidosHoje = pedidosHojeList.length;
   const valorHoje = pedidosHojeList.reduce((s, p) => s + Number(p.valor), 0);
   const budgetDia = Number(cpaDiaBudget) || 0;
-  const cpaDia = pedidosHojeList.length > 0 ? budgetDia / pedidosHojeList.length : 0;
+  const cpaDia = pedidosHoje > 0 ? budgetDia / pedidosHoje : 0;
 
+  // Valor Ontem
   const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
   const pedidosOntemList = pedidos.filter((p) => p.data === yesterday);
+  const pedidosOntem = pedidosOntemList.length;
   const valorOntem = pedidosOntemList.reduce((s, p) => s + Number(p.valor), 0);
 
+  // Valor da Semana (últimos 7 dias incluindo hoje)
   const cutoffSemana = subDays(new Date(), 6);
   const pedidosSemanaList = pedidos.filter((p) => isAfter(parseISO(p.data), cutoffSemana) || p.data === format(cutoffSemana, "yyyy-MM-dd"));
+  const pedidosSemana = pedidosSemanaList.length;
   const valorSemana = pedidosSemanaList.reduce((s, p) => s + Number(p.valor), 0);
 
+  // CPA últimos 7 dias
   const cutoff7d = subDays(new Date(), 7);
   const pedidos7d = pedidos.filter((p) => isAfter(parseISO(p.data), cutoff7d) || p.data === format(cutoff7d, "yyyy-MM-dd"));
   const anuncios7d = anuncios.filter((a) => isAfter(parseISO(a.data), cutoff7d) || a.data === format(cutoff7d, "yyyy-MM-dd"));
   const investido7d = anuncios7d.reduce((s, a) => s + Number(a.valor_investido), 0);
   const cpa7d = pedidos7d.length > 0 ? investido7d / pedidos7d.length : 0;
 
+  // Valor pago últimos 7 dias
   const pedidosPagos7d = pedidos.filter((p) => p.pedido_pago && isAfter(parseISO(p.updated_at), cutoff7d));
   const valorPago7d = pedidosPagos7d.reduce((s, p) => s + (Number(p.valor_pago) || Number(p.valor)), 0);
 
+  // Investimento anúncios últimos 7 dias
+  const investidoAnuncios7d = anuncios7d.reduce((s, a) => s + Number(a.valor_investido), 0);
+
+  // Inadimplência
   const now = new Date();
   const inadimplentes = filtered.filter((p) =>
-    p.pedido_chegou && !p.pedido_pago && (p.pedido_perdido || (p.data_entrega && differenceInCalendarDays(now, parseISO(p.data_entrega)) > 7))
+    p.pedido_chegou && !p.pedido_pago && (
+      p.pedido_perdido ||
+      (p.data_entrega && differenceInCalendarDays(now, parseISO(p.data_entrega)) > 7)
+    )
   );
   const taxaInadimplencia = qtdEntregues > 0 ? ((inadimplentes.length / qtdEntregues) * 100).toFixed(1) : "0";
+
+  // ROI
   const roiPago = totalInvestido > 0 ? ((lucroPagos / totalInvestido) * 100).toFixed(1) : "0";
   const roiAgendado = totalInvestido > 0 ? ((valorAgendadoTotal / totalInvestido) * 100).toFixed(1) : "0";
 
-  // Chart helpers
-  const groupByTime = (items: typeof pedidos, groupBy: string) => {
+  // Group helper
+  const groupByTime = (items: typeof pedidos, groupBy: string, dateField: string = "data") => {
     const map = new Map<string, number>();
     items.forEach((item) => {
-      const d = parseISO(item.data);
+      const d = parseISO((item as any)[dateField]);
       let key: string;
       if (groupBy === "day") key = format(d, "dd/MM");
       else if (groupBy === "week") key = `S${format(startOfWeek(d, { locale: ptBR }), "dd/MM")}`;
@@ -132,13 +185,16 @@ export default function Dashboard() {
     return Array.from(map.entries()).map(([label, count]) => ({ label, count }));
   };
 
+  // Fixed 14-day chart for orders grouped by day
   const buildLast14Days = (items: typeof pedidos) => {
-    const t = new Date();
+    const today = new Date();
     const days: { label: string; count: number }[] = [];
     for (let i = 13; i >= 0; i--) {
-      const d = subDays(t, i);
+      const d = subDays(today, i);
       const key = format(d, "yyyy-MM-dd");
-      days.push({ label: format(d, "dd/MM"), count: items.filter((p) => p.data === key).length });
+      const label = format(d, "dd/MM");
+      const count = items.filter((p) => p.data === key).length;
+      days.push({ label, count });
     }
     return days;
   };
@@ -146,6 +202,7 @@ export default function Dashboard() {
   const ordersData = useMemo(() => ordersGroupBy === "day" ? buildLast14Days(filtered) : groupByTime(filtered, ordersGroupBy), [filtered, ordersGroupBy]);
   const paymentsData = useMemo(() => groupByTime(pagos, paymentsGroupBy), [pagos, paymentsGroupBy]);
 
+  // Status pie
   const statusPieData = useMemo(() => {
     const entregues = filtered.filter((p) => p.pedido_chegou && !p.pedido_pago).length;
     const agendados = filtered.filter((p) => !p.pedido_chegou && !p.pedido_pago).length;
@@ -156,32 +213,46 @@ export default function Dashboard() {
     ].filter((d) => d.value > 0);
   }, [filtered, qtdPagos]);
 
+  // State pie (percentage)
   const statePieData = useMemo(() => {
     const map = new Map<string, number>();
-    filtered.forEach((p) => map.set(p.estado || "N/D", (map.get(p.estado || "N/D") || 0) + 1));
-    return Array.from(map.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+    filtered.forEach((p) => {
+      const uf = p.estado || "N/D";
+      map.set(uf, (map.get(uf) || 0) + 1);
+    });
+    return Array.from(map.entries())
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
   }, [filtered]);
 
+  // State bar
   const stateData = useMemo(() => {
     const map = new Map<string, number>();
-    filtered.forEach((p) => map.set(p.estado || "N/D", (map.get(p.estado || "N/D") || 0) + 1));
+    filtered.forEach((p) => {
+      const uf = p.estado || "N/D";
+      map.set(uf, (map.get(uf) || 0) + 1);
+    });
     return Array.from(map.entries()).map(([estado, count]) => ({ estado, count })).sort((a, b) => b.count - a.count);
   }, [filtered]);
 
-  if (isLoading) return <div className="text-muted-foreground p-6">Carregando dashboard...</div>;
+  if (loadingPedidos) return <div className="text-muted-foreground p-6">Carregando dashboard...</div>;
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <LayoutDashboard className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Dashboard de Vendas</h1>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
         </div>
         <div className="flex items-center gap-3">
           <Select value={estadoFilter} onValueChange={setEstadoFilter}>
-            <SelectTrigger className="w-40"><MapPin className="h-4 w-4 mr-1" /><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-40">
+              <MapPin className="h-4 w-4 mr-1" />
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="all">Todos os Estados</SelectItem>
               {allEstados.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -194,51 +265,60 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Temporal */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <MetricCard icon={DollarSign} title="Valor Hoje" value={`R$ ${valorHoje.toFixed(2)}`} subtitle={`${pedidosHojeList.length} pedidos`} className="text-primary" />
-        <MetricCard icon={DollarSign} title="Valor Ontem" value={`R$ ${valorOntem.toFixed(2)}`} subtitle={`${pedidosOntemList.length} pedidos`} />
-        <MetricCard icon={DollarSign} title="Valor da Semana" value={`R$ ${valorSemana.toFixed(2)}`} subtitle={`${pedidosSemanaList.length} pedidos`} className="text-primary" />
+      {/* Metric Cards Row 1 */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <MetricCard title="Lucro (Pagos)" icon={DollarSign} value={`R$ ${lucroPagos.toFixed(2)}`} className="text-primary" />
+        <MetricCard title="Valor Agendado (Total)" icon={Package} value={`R$ ${valorAgendadoTotal.toFixed(2)}`} />
+        <MetricCard title="Faturamento Pagos" icon={DollarSign} value={`R$ ${faturamentoPagos.toFixed(2)}`} className="text-primary" />
+        <MetricCard title="Agendado (s/ Pagos)" icon={Package} value={`R$ ${valorAgendadoSemPagos.toFixed(2)}`} />
+        <MetricCard title="Investimento Anúncios" icon={Megaphone} value={`R$ ${totalInvestido.toFixed(2)}`} subtitle={`c/ imposto: R$ ${(totalInvestido * 1.125).toFixed(2)}`} className="text-destructive" />
+        <MetricCard title="Frete Pendente" icon={Truck} value={`R$ ${gastoFreteReal.toFixed(2)}`} subtitle={`${fiveNaoPagos} não pagos · R$ ${freteDevolvido.toFixed(2)} devolvido (${fivePagos} pagos)`} className="text-destructive" />
       </div>
 
-      {/* Performance */}
+      {/* Metric Cards Row 2 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        <MetricCard icon={DollarSign} title="Faturamento Pagos" value={`R$ ${faturamentoPagos.toFixed(2)}`} className="text-primary" />
-        <MetricCard icon={DollarSign} title="Lucro (Pagos)" value={`R$ ${lucroPagos.toFixed(2)}`} className="text-primary" />
-        <MetricCard icon={Package} title="Valor Agendado" value={`R$ ${valorAgendadoTotal.toFixed(2)}`} />
-        <MetricCard icon={Megaphone} title="Investimento Anúncios" value={`R$ ${totalInvestido.toFixed(2)}`} subtitle={`c/ imposto: R$ ${(totalInvestido * 1.125).toFixed(2)}`} className="text-destructive" />
-        <MetricCard icon={Truck} title="Frete Pendente" value={`R$ ${gastoFreteReal.toFixed(2)}`} subtitle={`${fiveNaoPagos} não pagos`} className="text-destructive" />
-        <MetricCard icon={DollarSign} title="Valor Pendente" value={`R$ ${valorPendente.toFixed(2)}`} subtitle={`${aguardandoPgtoList.length} aguardando`} className="text-destructive" />
-        <MetricCard icon={Package} title="Pedidos" value={String(qtdPedidos)} subtitle={`${qtdPagos} pagos · ${qtdEntregues} entregues`} />
-        <MetricCard icon={Target} title="CPA Médio" value={`R$ ${cpaMedio.toFixed(2)}`} subtitle={`c/ imposto: R$ ${(cpaMedio * 1.125).toFixed(2)}`} />
+        <MetricCard title="Pedidos Feitos" icon={Package} value={String(qtdPedidos)} />
+        <MetricCard title="Pedidos Pagos" icon={TrendingUp} value={String(qtdPagos)} className="text-primary" />
+        <MetricCard title="Pedidos Five" icon={Package} value={String(qtdFive)} />
+        <MetricCard title="Pedidos Entregues" icon={Truck} value={String(qtdEntregues)} className="text-primary" />
+        <MetricCard title="Pedidos Keed" icon={Package} value={String(qtdKeed)} />
+        <MetricCard title="Aguardando Pgto" icon={Truck} value={String(qtdAguardandoPgto)} />
+        <MetricCard title="Valor Pendente" icon={DollarSign} value={`R$ ${valorPendente.toFixed(2)}`} subtitle={`${qtdAguardandoPgto} pedidos aguardando`} className="text-destructive" />
+        <MetricCard title="Em Prioridade" icon={AlertTriangle} value={String(qtdPrioridade)} />
+        <MetricCard title="CPA Médio" icon={Target} value={`R$ ${cpaMedio.toFixed(2)}`} subtitle={`c/ imposto: R$ ${(cpaMedio * 1.125).toFixed(2)}`} />
+        <MetricCard title="CPA 7 dias" icon={Target} value={`R$ ${cpa7d.toFixed(2)}`} subtitle={`${pedidos7d.length} pedidos · R$ ${investido7d.toFixed(2)} investido`} />
+        <MetricCard title="Valor Pago 7 dias" icon={DollarSign} value={`R$ ${valorPago7d.toFixed(2)}`} subtitle={`${pedidosPagos7d.length} pedidos pagos`} className="text-primary" />
+        <MetricCard title="Anúncios 7 dias" icon={Megaphone} value={`R$ ${investidoAnuncios7d.toFixed(2)}`} subtitle={`${anuncios7d.length} dias com investimento`} className="text-destructive" />
       </div>
 
-      {/* 7 dias + CPA dia */}
+      {/* Valor Hoje + Ontem + Semana */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4">
+        <MetricCard title="Valor Hoje" icon={DollarSign} value={`R$ ${valorHoje.toFixed(2)}`} subtitle={`${pedidosHoje} pedidos`} className="text-primary" />
+        <MetricCard title="Valor Ontem" icon={DollarSign} value={`R$ ${valorOntem.toFixed(2)}`} subtitle={`${pedidosOntem} pedidos`} />
+        <MetricCard title="Valor da Semana" icon={DollarSign} value={`R$ ${valorSemana.toFixed(2)}`} subtitle={`${pedidosSemana} pedidos (7 dias)`} className="text-primary" />
+      </div>
+
+      {/* CPA do Dia + Inadimplência + ROIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        <MetricCard icon={DollarSign} title="Valor Pago 7 dias" value={`R$ ${valorPago7d.toFixed(2)}`} subtitle={`${pedidosPagos7d.length} pagos`} className="text-primary" />
-        <MetricCard icon={Megaphone} title="Anúncios 7 dias" value={`R$ ${investido7d.toFixed(2)}`} className="text-destructive" />
-        <MetricCard icon={Target} title="CPA 7 dias" value={`R$ ${cpa7d.toFixed(2)}`} subtitle={`${pedidos7d.length} pedidos`} />
         <Card>
-          <CardHeader className="pb-2 space-y-0"><CardTitle className="text-sm font-medium">CPA do Dia</CardTitle></CardHeader>
+          <CardHeader className="pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">CPA do Dia</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-center gap-2">
               <Label className="text-xs whitespace-nowrap">Orçamento:</Label>
               <Input type="number" className="h-8 text-sm" placeholder="0.00" value={cpaDiaBudget} onChange={(e) => setCpaDiaBudget(e.target.value)} />
             </div>
             <p className="text-lg font-bold">R$ {cpaDia.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground">{pedidosHojeList.length} pedidos hoje</p>
+            <p className="text-xs text-muted-foreground">{pedidosHoje} pedidos hoje</p>
           </CardContent>
         </Card>
+        <MetricCard title="Inadimplência" icon={AlertTriangle} value={`${taxaInadimplencia}%`} subtitle={`${inadimplentes.length} inadimplentes (+7d ou perdidos)`} />
+        <MetricCard title="ROI vs Pago" icon={Percent} value={`${roiPago}%`} />
+        <MetricCard title="ROI vs Agendado" icon={Percent} value={`${roiAgendado}%`} />
       </div>
 
-      {/* ROIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <MetricCard icon={AlertTriangle} title="Inadimplência" value={`${taxaInadimplencia}%`} subtitle={`${inadimplentes.length} inadimplentes`} />
-        <MetricCard icon={Percent} title="ROI vs Pago" value={`${roiPago}%`} />
-        <MetricCard icon={Percent} title="ROI vs Agendado" value={`${roiAgendado}%`} />
-      </div>
-
-      {/* Charts */}
+      {/* Charts Row 1: Orders + Payments */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -272,7 +352,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Pie Charts */}
+      {/* Charts Row 2: Status Pie + State Pie */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader><CardTitle className="text-base">Status dos Pedidos</CardTitle></CardHeader>
@@ -306,7 +386,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* State Bar */}
+      {/* Chart: State Bar */}
       <Card>
         <CardHeader><CardTitle className="text-base">Pedidos por Estado</CardTitle></CardHeader>
         <CardContent>
@@ -318,5 +398,20 @@ export default function Dashboard() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function MetricCard({ title, icon: Icon, value, className, subtitle }: { title: string; icon: any; value: string; className?: string; subtitle?: string }) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className={`text-2xl font-bold ${className || ""}`}>{value}</div>
+        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+      </CardContent>
+    </Card>
   );
 }
