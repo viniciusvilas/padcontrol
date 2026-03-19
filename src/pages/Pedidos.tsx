@@ -134,6 +134,7 @@ export default function Pedidos() {
         </div>
         <div className="flex gap-2">
           <Button onClick={() => { setEditPedido(null); setFormOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Novo Pedido</Button>
+          <Button variant="outline" onClick={exportCSV}><Download className="h-4 w-4 mr-1" /> Exportar</Button>
           <Button variant="outline" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4 mr-1" /> Importar</Button>
           <Button variant="outline" onClick={() => setListaOpen(true)}><Phone className="h-4 w-4 mr-1" /> Lista Telefônica</Button>
         </div>
