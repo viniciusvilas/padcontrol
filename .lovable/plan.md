@@ -1,23 +1,21 @@
 
 
-## Linhas alternadas com tons de roxo nas tabelas de pedidos
+## Plano: Botão de Exportar Pedidos (CSV)
 
 ### O que será feito
-Adicionar cores de fundo alternadas (roxo claro e roxo mais forte) nas linhas das tabelas de pedidos para melhorar a legibilidade visual.
+Adicionar um botão "Exportar" na barra de ações da página de Pedidos que gera um arquivo CSV com todos os dados dos pedidos filtrados, incluindo data de chegada e data de pagamento.
 
-### Abordagem
-A forma mais limpa é usar o índice do `.map()` para aplicar classes de fundo alternadas nas `TableRow`. Isso será feito em todas as 6 páginas que listam pedidos:
+### Detalhes técnicos
 
-1. **Pedidos.tsx** — `filtered.map((p, i) =>` com classe condicional
-2. **Perdidos.tsx**
-3. **Pagos.tsx**
-4. **Prioridade.tsx**
-5. **FaltaChamar.tsx**
-6. **PrestesAChegar.tsx**
+**Arquivo:** `src/pages/Pedidos.tsx`
 
-### Classes CSS
-- Linhas pares: `bg-purple-50/60 dark:bg-purple-950/20`
-- Linhas ímpares: `bg-purple-100/60 dark:bg-purple-900/20`
+1. Adicionar o ícone `Download` do lucide-react nos imports
+2. Criar uma função `exportCSV` que:
+   - Pega os pedidos filtrados (`filtered`)
+   - Gera um CSV com todas as colunas: Data, Cliente, CPF, Telefone, Produto, Valor, Valor Pago, Plataforma, Prazo, Previsão Entrega, Status, Estado, Local Entrega, Rastreio, Chegou, Data Entrega, Chamado, Cobrado, Pago, Perdido, Observações
+   - Usa `Blob` + `URL.createObjectURL` para download automático
+   - Nome do arquivo: `pedidos_YYYY-MM-DD.csv`
+3. Adicionar o botão "Exportar" ao lado dos botões existentes (Novo Pedido, Importar, Lista Telefônica)
 
-Serão aplicadas via `className` condicional no `<TableRow>`: `className={i % 2 === 0 ? "bg-purple-50/60 dark:bg-purple-950/20" : "bg-purple-100/60 dark:bg-purple-900/20"}`, preservando o hover existente.
+Nenhuma alteração no banco de dados é necessária.
 
