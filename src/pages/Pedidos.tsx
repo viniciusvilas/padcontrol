@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, Upload, Plus, Search, Filter, Pencil, Trash2, Megaphone, Copy, Phone } from "lucide-react";
+import { Package, Upload, Plus, Search, Filter, Pencil, Trash2, Megaphone, Copy, Phone, Download } from "lucide-react";
 import PagamentoDialog from "@/components/PagamentoDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -90,6 +90,29 @@ export default function Pedidos() {
   const lucroLiquido = pagos.reduce((s, p) => s + Number(p.valor) - (p.plataforma === "Five" ? FRETE_FIVE : 0), 0);
   const totalValor = filtered.reduce((sum, p) => sum + Number(p.valor), 0);
 
+  const exportCSV = () => {
+    const headers = ["Data","Cliente","CPF","Telefone","Produto","Valor","Valor Pago","Plataforma","Prazo","Previsão Entrega","Status","Estado","Local Entrega","Rastreio","Chegou","Data Entrega","Chamado","Cobrado","Pago","Perdido","Observações"];
+    const rows = filtered.map(p => [
+      p.data, p.cliente, p.cpf || "", p.telefone || "", p.produto,
+      Number(p.valor).toFixed(2), Number(p.valor_pago).toFixed(2), p.plataforma,
+      p.prazo, p.previsao_entrega || "", p.status, p.estado || "",
+      p.local_entrega || "", p.rastreio || "",
+      p.pedido_chegou ? "Sim" : "Não", p.data_entrega || "",
+      p.ja_foi_chamado ? "Sim" : "Não", p.cliente_cobrado ? "Sim" : "Não",
+      p.pedido_pago ? "Sim" : "Não", p.pedido_perdido ? "Sim" : "Não",
+      p.observacoes || ""
+    ]);
+    const csvContent = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pedidos_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Pedidos exportados!");
+  };
+
   const toggleField = async (pedido: Pedido, field: "pedido_chegou" | "ja_foi_chamado" | "cliente_cobrado" | "pedido_pago" | "pedido_perdido") => {
     const newVal = !(pedido as any)[field];
     const updateData: any = { [field]: newVal };
@@ -111,6 +134,7 @@ export default function Pedidos() {
         </div>
         <div className="flex gap-2">
           <Button onClick={() => { setEditPedido(null); setFormOpen(true); }}><Plus className="h-4 w-4 mr-1" /> Novo Pedido</Button>
+          <Button variant="outline" onClick={exportCSV}><Download className="h-4 w-4 mr-1" /> Exportar</Button>
           <Button variant="outline" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4 mr-1" /> Importar</Button>
           <Button variant="outline" onClick={() => setListaOpen(true)}><Phone className="h-4 w-4 mr-1" /> Lista Telefônica</Button>
         </div>
