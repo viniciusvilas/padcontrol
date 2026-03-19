@@ -589,6 +589,7 @@ export type Database = {
           created_at: string
           data: string
           data_entrega: string | null
+          data_pagamento: string | null
           em_rota: boolean
           estado: string | null
           id: string
@@ -619,6 +620,7 @@ export type Database = {
           created_at?: string
           data?: string
           data_entrega?: string | null
+          data_pagamento?: string | null
           em_rota?: boolean
           estado?: string | null
           id?: string
@@ -649,6 +651,7 @@ export type Database = {
           created_at?: string
           data?: string
           data_entrega?: string | null
+          data_pagamento?: string | null
           em_rota?: boolean
           estado?: string | null
           id?: string
