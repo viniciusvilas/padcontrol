@@ -90,6 +90,29 @@ export default function Pedidos() {
   const lucroLiquido = pagos.reduce((s, p) => s + Number(p.valor) - (p.plataforma === "Five" ? FRETE_FIVE : 0), 0);
   const totalValor = filtered.reduce((sum, p) => sum + Number(p.valor), 0);
 
+  const exportCSV = () => {
+    const headers = ["Data","Cliente","CPF","Telefone","Produto","Valor","Valor Pago","Plataforma","Prazo","Previsão Entrega","Status","Estado","Local Entrega","Rastreio","Chegou","Data Entrega","Chamado","Cobrado","Pago","Perdido","Observações"];
+    const rows = filtered.map(p => [
+      p.data, p.cliente, p.cpf || "", p.telefone || "", p.produto,
+      Number(p.valor).toFixed(2), Number(p.valor_pago).toFixed(2), p.plataforma,
+      p.prazo, p.previsao_entrega || "", p.status, p.estado || "",
+      p.local_entrega || "", p.rastreio || "",
+      p.pedido_chegou ? "Sim" : "Não", p.data_entrega || "",
+      p.ja_foi_chamado ? "Sim" : "Não", p.cliente_cobrado ? "Sim" : "Não",
+      p.pedido_pago ? "Sim" : "Não", p.pedido_perdido ? "Sim" : "Não",
+      p.observacoes || ""
+    ]);
+    const csvContent = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pedidos_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Pedidos exportados!");
+  };
+
   const toggleField = async (pedido: Pedido, field: "pedido_chegou" | "ja_foi_chamado" | "cliente_cobrado" | "pedido_pago" | "pedido_perdido") => {
     const newVal = !(pedido as any)[field];
     const updateData: any = { [field]: newVal };
